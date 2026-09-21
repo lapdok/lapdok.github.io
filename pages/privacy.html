@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kebijakan Privasi - LapDok</title>
+    
+    <link rel="manifest" href="../assets/manifest.json">
+    <meta name="theme-color" content="#2c3e50">
+
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.7; color: #333; background: #f4f7f6; padding: 20px; max-width: 800px; margin: auto; font-size: 14px; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; margin-top: 0; font-size: 24px; }
+        h3 { color: #2980b9; margin-top: 20px; margin-bottom: 8px; }
+        p { margin-top: 0; margin-bottom: 12px; color: #555; }
+        a { color: #3498db; text-decoration: none; font-weight: bold; }
+        .btn-back { display: inline-block; margin-top: 20px; padding: 10px 20px; background: #34495e; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; }
+        .btn-back:hover { background: #2c3e50; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔒 Kebijakan Privasi</h1>
+        <p style="font-size:12px; color:#888; margin-bottom: 20px;">Terakhir diperbarui: 22 Juli 2026</p>
+        
+        <p>Di <strong>LapDok (Dokumentasi Kinerja Lapangan)</strong>, privasi dan keamanan data pengguna adalah prioritas utama kami. Kebijakan Privasi ini menjelaskan bagaimana informasi Anda dikelola saat menggunakan aplikasi web kami.</p>
+
+        <h3>1. Pemrosesan Data Lokal (Client-Side Storage)</h3>
+        <p>Semua data laporan, teks keterangan, draft sementara, dan riwayat dokumen yang Anda masukkan disimpan dan diproses secara <strong>lokal di dalam memori perangkat Anda (Client-Side)</strong> menggunakan `localForage` & `localStorage`. Kami tidak menyimpan atau mengumpulkan database laporan sensitif Anda di server pihak ketiga.</p>
+
+        <h3>2. Analisis Foto & Kecerdasan Buatan (Google Gemini AI API)</h3>
+        <p>Saat Anda menggunakan fitur <strong>"✨ AI Deskripsi Gambar"</strong>, data gambar yang diunggah dikirimkan langsung dari browser Anda secara terenkripsi (HTTPS) ke endpoint resmi <strong>Google Gemini AI API</strong> (`generativelanguage.googleapis.com`) hanya untuk tujuan menganalisis dan menghasilkan 1 kalimat ringkasan deskripsi pekerjaan. Gambar tidak disimpan oleh sistem LapDok.</p>
+
+        <h3>3. Izin Akses Lokasi (GPS) & Kamera</h3>
+        <p>Aplikasi ini meminta izin akses GPS dan kamera semata-mata untuk fitur pembacaan koordinat lokasi serta penanaman stempel watermark (Timestamp & Alamat) langsung pada piksel gambar dokumentasi Anda. Kami tidak melacak lokasi Anda di luar sesi penggunaan aplikasi.</p>
+
+        <h3>4. Layanan Iklan & Cookies (Google AdSense)</h3>
+        <p>Situs ini bermitra dengan <strong>Google AdSense</strong> untuk menayangkan iklan non-intrusif guna mendukung operasional aplikasi bebas biaya. Google AdSense dapat menggunakan <em>cookies</em> untuk menyajikan iklan yang relevan berdasarkan kunjungan Anda ke situs ini atau situs lain di internet.</p>
+        <p>Anda dapat memilih untuk mengelola atau menonaktifkan iklan yang dipersonalisasi melalui <a href="https://adssettings.google.com" target="_blank">Pengaturan Iklan Google</a>.</p>
+
+        <h3>5. Kontak & Pertanyaan</h3>
+        <p>Jika Anda memiliki pertanyaan seputar Kebijakan Privasi ini, Anda dapat menghubungi tim pengembang melalui repository resmi proyek di GitHub.</p>
+
+        <a href="../index.html" class="btn-back">← Kembali ke Beranda</a>
+    </div>
+</body>
+</html>

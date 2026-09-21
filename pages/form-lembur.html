@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Input Laporan Lembur - DokKiner</title>
+    
+    <link rel="manifest" href="../assets/manifest.json">
+    <meta name="theme-color" content="#e67e22">
+
+    <!-- Leaflet JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Script & Style -->
+    <link rel="stylesheet" href="../css/form.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    <script src="../js/jarvis.js"></script>
+    <script src="../js/realtime-counter.js"></script>
+    <script src="../js/image-compressor.js"></script>
+    <script defer src="../js/lembur-handler.js?v=1.1"></script>
+
+    <style>
+        .navbar { background: #d35400 !important; }
+        .btn-save { background: #e67e22 !important; }
+        .header-main { background: #e67e22 !important; }
+        .month-header {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            border: 2px solid #e67e22;
+            font-weight: bold;
+            color: #d35400;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="../index.html">🏠 Home</a>
+    <a href="form.html">📝 Form Input</a>
+    <a href="form-lembur.html" class="active">🕒 Laporan Lembur</a>
+    <a href="tampildata.html">📂 Riwayat Laporan</a>
+</nav>
+
+<div class="container">
+    <div id="month-display" class="month-header">
+        Laporan Lembur Bulan: -
+    </div>
+
+    <div class="global-info-card" style="margin-bottom:15px; border-color:#e67e22;">
+        <label style="color:#d35400;">SUB BIDANG:</label>
+        <input type="text" id="sub-bidang" oninput="saveDraft()" placeholder="Masukkan nama sub bidang..." style="border-color:#e67e22;">
+    </div>
+    
+    <div id="edit-banner" style="display:none; background: #f1c40f; padding: 10px; margin-bottom: 10px; border-radius: 5px; text-align: center;">
+        ⚠️ MODE EDIT: Perubahan akan menimpa data lama. <br> 
+        <button onclick="cancelEdit()" style="margin-top:5px; padding:5px; cursor:pointer;">Batal Edit</button>
+    </div>
+
+    <div id="job-container"></div>
+
+    <div class="actions">
+        <button class="btn-add" onclick="addNewJobItem()">+ Tambah Item Lembur</button>
+        <button class="btn-save" onclick="saveToHistory()">💾 Simpan Laporan Lembur</button>
+    </div>
+</div>
+
+<div id="map-modal">
+    <div class="modal-content">
+        <div style="position: relative;">
+            <div id="map-container"></div>
+            <div class="map-controls">
+                <button class="btn-locate" onclick="getCurrentLocation()">🎯</button>
+            </div>
+        </div>
+        <div style="padding:15px; display:flex; justify-content: space-between; align-items: center;">
+            <span id="map-status" style="font-size:10px; color:#e67e22;"></span>
+            <div>
+                <button onclick="closeMap()" style="padding:10px;">Batal</button>
+                <button onclick="confirmLocation()" style="padding:10px; background:#27ae60; color:white; border:none; border-radius:4px;">Pilih Lokasi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="cam-modal">
+    <video id="cam-video" autoplay playsinline muted></video>
+        <div id="cam-overlay" style="display: none;">
+            <div class="tm-flex">
+                <div class="tm-time" id="val-time"></div>
+                <div class="tm-line"></div>
+                <div class="tm-date-col">
+                    <div class="tm-date" id="val-date"></div>
+                    <div class="tm-day" id="val-day"></div>
+                </div>
+            </div>
+            <div class="tm-info" id="val-gps"></div>
+            <div class="tm-info" id="val-addr"></div>
+        </div>
+    <div class="cam-controls">
+        <button onclick="closeCamera()" style="color:white; background:none; border:none;">Batal</button>
+        <button class="btn-shutter" onclick="capturePhoto()"></button>
+        <div style="width:40px;"></div>
+    </div>
+</div>
+
+<button id="btn-mute-toggle" onclick="Jarvis.toggleMute()">🔇 Matikan Suara</button>
+
+</body>
+</html>

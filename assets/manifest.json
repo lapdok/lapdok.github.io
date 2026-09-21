@@ -1,0 +1,17 @@
+{
+  "name": "Dokumentasi Kinerja",
+  "short_name": "LapDok",
+  "description": "Dokumentasi Kinerja",
+  "start_url": "../index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#00d2ff", 
+  "icons": [
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

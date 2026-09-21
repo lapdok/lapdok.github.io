@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riwayat Laporan Valve</title>
+    <style>
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        body { font-family: sans-serif; margin: 0; background: #f4f7f6; padding-bottom: 50px; }
+        .navbar { display: flex; justify-content: space-around; background: #2c3e50; padding: 12px 0; position: sticky; top: 0; z-index: 999; }
+        .navbar a { color: white; text-decoration: none; font-weight: bold; font-size: 13px; opacity: 0.7; }
+        .navbar a.active { opacity: 1; border-bottom: 2px solid #00d2ff; }
+        .container { max-width: 800px; margin: auto; padding: 15px; }
+        .card { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #ddd; display: flex; align-items: center; justify-content: space-between; }
+        .btn-print { background: #27ae60; color: white; border: none; padding: 15px; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 20px; }
+
+        #print-area { display: none; }
+
+        @media print {
+            @page { size: A4; margin: 10mm; }
+            .navbar, .container, .btn-del { display: none !important; }
+            #print-area { display: block !important; }
+            .print-item { border: 1px solid #000; margin-bottom: 10mm; page-break-inside: avoid; }
+            .print-header { background: #eee !important; padding: 5px; font-weight: bold; border-bottom: 1px solid #000; display: flex; justify-content: space-between; font-size: 12px;}
+            .print-grid { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #000; }
+            .print-col { border-right: 1px solid #000; padding: 5px; text-align: center; }
+            .print-col:last-child { border-right: none; }
+            .print-img { width: 90mm; height: 65mm; object-fit: contain; background: #fafafa; border: 1px solid #eee; }
+            .print-desc { padding: 10px; font-size: 11px; }
+            .label-foto { font-weight: bold; font-size: 10px; margin-bottom: 5px; display: block; text-transform: uppercase; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="index.html">📝 Input Valve</a>
+    <a href="tampildata.html" class="active">📂 Riwayat</a>
+</nav>
+
+<div class="container">
+    <div id="history-list"></div>
+    <button class="btn-print" id="print-btn" onclick="generatePrint()" disabled>🖨️ Cetak Laporan Terpilih (0)</button>
+</div>
+
+<div id="print-area">
+    <h2 style="text-align:center;">LAPORAN KERJA VALVE</h2>
+    <div id="print-target"></div>
+</div>
+
+<script>
+    function updateUI() {
+        const data = JSON.parse(localStorage.getItem('valve_history') || '[]');
+        data.sort((a,b) => b.id - a.id);
+        const listDiv = document.getElementById('history-list');
+        listDiv.innerHTML = data.map(h => `
+            <div class="card">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <input type="checkbox" class="cb" value="${h.id}" onchange="updateBtn()">
+                    <div onclick="editData(${h.id})" style="cursor:pointer;">
+                        <div style="font-weight:bold;">📅 ${h.timestamp}</div>
+                        <div style="font-size:11px; color:gray;">${h.data.length} Titik Valve</div>
+                    </div>
+                </div>
+                <button onclick="deleteData(${h.id})" style="color:red; border:none; background:none; cursor:pointer;">Hapus</button>
+            </div>`).join('');
+        updateBtn();
+    }
+
+    function updateBtn() {
+        const count = document.querySelectorAll('.cb:checked').length;
+        document.getElementById('print-btn').disabled = count === 0;
+        document.getElementById('print-btn').innerText = `🖨️ Cetak Laporan Terpilih (${count})`;
+    }
+
+    function editData(id) {
+        const history = JSON.parse(localStorage.getItem('valve_history') || '[]');
+        const entry = history.find(h => h.id === id);
+        localStorage.setItem('valve_draft', JSON.stringify(entry.data));
+        localStorage.setItem('valve_edit_context', id);
+        window.location.href = "index.html";
+    }
+
+    function deleteData(id) {
+        if(confirm("Hapus data ini?")) {
+            let h = JSON.parse(localStorage.getItem('valve_history'));
+            localStorage.setItem('valve_history', JSON.stringify(h.filter(x => x.id !== id)));
+            updateUI();
+        }
+    }
+
+    function formatPrintDate(dateInput) {
+        if (!dateInput || dateInput === '-') return '-';
+        const monthNamesIndo = [
+            "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+            "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+        ];
+        if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput.trim())) {
+            const parts = dateInput.trim().split('-');
+            const year = parts[0];
+            const monthIdx = parseInt(parts[1], 10) - 1;
+            const day = parts[2].padStart(2, '0');
+            if (monthIdx >= 0 && monthIdx < 12) {
+                return `${day} ${monthNamesIndo[monthIdx]} ${year}`;
+            }
+        }
+        const d = new Date(dateInput);
+        if (!isNaN(d.getTime())) {
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = monthNamesIndo[d.getMonth()];
+            const year = d.getFullYear();
+            return `${day} ${month} ${year}`;
+        }
+        return dateInput;
+    }
+
+    function generatePrint() {
+        const selectedIds = Array.from(document.querySelectorAll('.cb:checked')).map(cb => parseFloat(cb.value));
+        const allHistory = JSON.parse(localStorage.getItem('valve_history') || '[]');
+        const selected = allHistory.filter(h => selectedIds.includes(h.id));
+        
+        let html = "";
+        selected.forEach(report => {
+            report.data.forEach((item, idx) => {
+                html += `
+                <div class="print-item">
+                    <div class="print-header">
+                        <span>VALVE #${idx+1}</span>
+                        <span>Tanggal: ${formatPrintDate(item.workDate)}</span>
+                    </div>
+                    <div style="font-size:9px; padding:5px; border-bottom:1px solid #000;">
+                        <b>Lokasi:</b> ${item.addr}
+                    </div>
+                    <div class="print-grid">
+                        <div class="print-col">
+                            <span class="label-foto">BUKA VALVE</span>
+                            ${item.p1 ? `<img src="${item.p1}" class="print-img">` : 'Tidak ada foto'}
+                        </div>
+                        <div class="print-col">
+                            <span class="label-foto">TUTUP VALVE</span>
+                            ${item.p2 ? `<img src="${item.p2}" class="print-img">` : 'Tidak ada foto'}
+                        </div>
+                    </div>
+                    <div class="print-desc">
+                        <b>KETERANGAN:</b> ${item.desc || '-'}
+                    </div>
+                </div>`;
+            });
+        });
+        document.getElementById('print-target').innerHTML = html;
+        setTimeout(() => { window.print(); }, 500);
+    }
+
+    window.onload = updateUI;
+</script>
+</body>
+</html>

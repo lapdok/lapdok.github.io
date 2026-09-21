@@ -1,0 +1,244 @@
+/* print-pdf.css - Classic 2020 Style (Restored) */
+* { box-sizing: border-box; }
+
+body { 
+    font-family: 'Segoe UI', Tahoma, sans-serif; 
+    margin: 0; 
+    background: #f4f7f6; 
+    color: #333; 
+    padding-bottom: 100px; 
+}
+
+.navbar { 
+    display: flex; 
+    justify-content: space-around; 
+    background: #34495e; 
+    padding: 12px 0; 
+    position: sticky; 
+    top: 0; 
+    z-index: 9999; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+}
+.navbar a { 
+    color: white; 
+    text-decoration: none; 
+    font-weight: bold; 
+    font-size: 13px; 
+    opacity: 0.7; 
+}
+.navbar a.active { 
+    opacity: 1; 
+    border-bottom: 2px solid #00d2ff; 
+}
+
+.container { max-width: 900px; margin: auto; padding: 15px; }
+
+.filter-card { 
+    background: white; 
+    padding: 15px; 
+    border-radius: 8px; 
+    margin-bottom: 20px; 
+    border: 1px solid #ddd; 
+}
+
+.btn-action { 
+    display: block; 
+    width: 100%; 
+    border: none; 
+    padding: 15px; 
+    border-radius: 6px; 
+    font-weight: bold; 
+    cursor: pointer; 
+    margin-top: 10px; 
+    color: white; 
+}
+.btn-print { background: #27ae60; }
+.btn-download { background: #3498db; }
+.btn-action:disabled { background: #bdc3c7; cursor: not-allowed; }
+
+.report-card-wrapper { 
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+    background: white; 
+    margin-bottom: 10px; 
+    padding: 12px; 
+    border-radius: 8px; 
+    border: 1px solid #eee; 
+}
+.report-card-preview { flex-grow: 1; cursor: pointer; position: relative; overflow: hidden; }
+.report-card-content { display: flex; gap: 12px; align-items: flex-start; padding-top: 5px; }
+.report-thumb { width: 70px; height: 70px; background: #eee; border-radius: 4px; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 1px solid #ddd; }
+.report-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.no-thumb { font-size: 24px; opacity: 0.3; }
+.report-details { flex-grow: 1; overflow: hidden; }
+.report-title { font-weight: bold; font-size: 13px; color: #2c3e50; margin-bottom: 5px; }
+.report-items-preview { font-size: 10px; color: #666; line-height: 1.4; display: flex; flex-direction: column; gap: 3px; }
+.preview-item-row { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+.btn-del { 
+    position: absolute; 
+    right: 0; 
+    top: 0; 
+    background: #e74c3c; 
+    color: white; 
+    border: none; 
+    padding: 4px 8px; 
+    border-radius: 4px; 
+    font-size: 9px; 
+    cursor: pointer; 
+    z-index: 10;
+}
+
+/* CSS CETAK/PDF */
+#print-area { display: none; }
+@media print {
+    body * { visibility: hidden; }
+    #print-area, #print-area * { visibility: visible; }
+    #print-area { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
+}
+
+/* Page Container - Continuous on Screen, Paged on Print */
+.page-container { 
+    width: 210mm; 
+    padding: 10mm 15mm; 
+    background: white; 
+    margin: 20px auto; /* Restored margin for visual separation on screen */
+    box-shadow: 0 0 10px rgba(0,0,0,0.1); 
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden; 
+}
+
+@media print {
+    .page-container {
+        height: 297mm; /* Essential for A4 */
+        margin: 0;
+        box-shadow: none;
+        page-break-inside: avoid;
+    }
+    .page-container:not(:last-child) {
+        page-break-after: always;
+    }
+    .page-container:last-child {
+        page-break-after: auto;
+    }
+}
+
+
+/* Helper for automatic pagination - Removed as we use separate containers now */
+
+
+.print-main-header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 3mm; padding: 5px; margin-top: 0; }
+.print-main-header h1 { font-size: 14px; margin: 0; text-transform: uppercase; }
+.print-main-header h2 { font-size: 11px; margin: 2px 0 0 0; }
+.print-job-item-merged { 
+    border: 1px solid #000; 
+    margin-bottom: 5mm; 
+    page-break-inside: avoid; 
+    background: #fff; 
+    display: flex;
+    box-sizing: border-box;
+    width: 100%;
+}
+.print-photos-col {
+    width: 48%;
+    border-right: 1px solid #000;
+    padding: 2mm;
+    display: flex;
+    flex-direction: column;
+    gap: 2mm;
+    background: #fff;
+}
+.print-photo-block {
+    border: 1px solid #000;
+    display: flex;
+    flex-direction: column;
+}
+.print-photo-lbl {
+    background: #2c3e50;
+    color: #fff;
+    font-size: 8.5px;
+    font-weight: bold;
+    text-align: center;
+    padding: 3px 0;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.print-img-box { 
+    width: 100%; 
+    height: 60mm; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    overflow: hidden; 
+    background: #fff; 
+    padding: 2px;
+}
+.print-img-box img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
+.print-info-col-merged {
+    width: 52%;
+    padding: 4mm 5mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 3mm;
+    font-size: 9.5px;
+    line-height: 1.4;
+    background: #fff;
+}
+.print-info-row {
+    margin-bottom: 1mm;
+}
+.print-info-label {
+    font-weight: bold;
+    color: #000;
+    display: block;
+    font-size: 9px;
+    text-transform: uppercase;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 1px;
+    margin-bottom: 2px;
+}
+.print-info-value {
+    color: #222;
+    word-break: break-word;
+}
+.print-footer-page { position: absolute; bottom: 5mm; right: 15mm; font-size: 8.5px; font-style: italic; font-weight: bold; }
+
+.print-signature {
+    margin-top: 10mm;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 10mm;
+    font-size: 11px;
+    line-height: 1.6;
+}
+.sig-col {
+    text-align: center;
+    width: 45%;
+}
+.sig-space {
+    height: 18mm;
+}
+.sig-name {
+    font-weight: bold;
+    border-bottom: 1px solid #000;
+    display: inline-block;
+    min-width: 180px;
+    margin-top: 5px;
+}
+
+@media print {
+    .screen-only { display: none !important; }
+}
+
+
+/* RESPONSIVE ADJUSTMENTS (Retained) */
+@media (max-width: 600px) {
+    .container { padding: 10px; }
+    .report-card-wrapper { padding: 10px; gap: 8px; }
+    .report-card-preview div:first-child { font-size: 13px !important; }
+    .report-card-preview div:last-child { font-size: 10px !important; }
+    .btn-action { padding: 12px; font-size: 13px; }
+}

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LapDok - Dokumentasi Kinerja Digital</title>
+    
+    <!-- Google AdSense Auto Ads -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2642522351768171" crossorigin="anonymous"></script>
+
+    <!-- PWA Setup -->
+    <link rel="manifest" href="assets/manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+
+    <!-- localForage (IndexedDB Wrapper) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+
+    <!-- Script Jarvis & Counter -->
+    <script src="js/jarvis.js"></script>
+    <script src="js/realtime-counter.js"></script>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #f4f7f6; 
+            color: #333; 
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar { 
+            display: flex; 
+            justify-content: space-around; 
+            background: #2c3e50; 
+            padding: 15px 0; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+        }
+        .navbar a { color: white; text-decoration: none; font-weight: bold; font-size: 14px; opacity: 0.8; }
+        .navbar a.active { opacity: 1; border-bottom: 2px solid #3498db; }
+
+        header { padding: 30px 20px; text-align: center; background: #34495e; color: white; }
+        header h1 { font-size: 28px; letter-spacing: 1px; }
+
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            gap: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Ad Slot Styling */
+        .ad-placeholder { width: 100%; min-height: 100px; background: #eee; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 10px; color: #999; text-transform: uppercase; }
+
+        .action-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px 20px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e1e8ed;
+        }
+        
+        .jarvis-icon { font-size: 50px; margin-bottom: 15px; }
+        .action-card h2 { font-size: 20px; margin-bottom: 10px; color: #2c3e50; }
+        .action-card p { font-size: 14px; color: #666; margin-bottom: 25px; line-height: 1.6; }
+
+        .btn-start {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 18px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.3s;
+        }
+
+        /* SEO CONTENT SECTION */
+        .seo-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #e1e8ed;
+            text-align: left;
+        }
+        .seo-section h3 { font-size: 18px; color: #2c3e50; margin-bottom: 10px; }
+        .seo-section p { font-size: 13px; color: #555; line-height: 1.6; margin-bottom: 15px; }
+
+        .footer-nav { margin-top: 20px; padding: 20px; text-align: center; font-size: 13px; }
+        .footer-nav a { color: #3498db; text-decoration: none; margin: 0 10px; }
+
+        .live-card {
+            background: #fff;
+            border: 1px solid #e1e8ed;
+            border-radius: 12px;
+            padding: 15px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .pulse { width: 10px; height: 10px; background: #2ecc71; border-radius: 50%; display: inline-block; margin-right: 8px; animation: blink 2s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="active">🏠 Beranda</a>
+        <a href="pages/form.html">📝 Input Data</a>
+        <a href="pages/form-lembur.html">🕒 Laporan Lembur</a>
+        <a href="pages/tampildata.html">📂 Arsip</a>
+    </nav>
+
+    <header>
+        <h1>LapDok</h1>
+        <p>Asisten Dokumentasi Kinerja Pegawai</p>
+    </header>
+
+    <div class="main-content">
+        
+        <!-- Iklan Atas -->
+        <div class="ad-placeholder">
+<!-- Iklan Produk Cuerpo (Menggantikan Google Ads) -->
+<div class="ad-placeholder" style="background: white; border: 1px solid #e1e8ed; border-radius: 12px; height: auto; padding: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); font-family: 'Segoe UI', sans-serif;">
+    <a href="https://dm.terabox.com/referral/81366889560292" target="_blank" style="text-decoration: none; color: inherit; display: flex; align-items: center; width: 100%;">
+        
+        <!-- Icon / Thumbnail -->
+        <img src="https://s5.teraboxcdn.com/common-static/favicon.ico" alt="TeraBox" style="width: 72px; height: 72px; border-radius: 12px; object-fit: cover; margin-right: 15px; border: 1px solid #eef2f7; padding: 6px; background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);">
+        
+        <div style="text-align: left; flex: 1;">
+            <!-- Badge -->
+            <span style="background: #FF6B35; color: white; font-size: 9px; padding: 3px 8px; border-radius: 4px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">🔥 1TB Gratis</span>
+            
+            <!-- Headline -->
+            <h4 style="font-size: 15px; margin: 6px 0 3px 0; color: #1a1a2e; line-height: 1.3; font-weight: 700;">
+                Penyimpanan Cloud 1TB Gratis — Nggak Perlu Bayar!
+            </h4>
+            
+            <!-- Value Proposition -->
+            <p style="font-size: 11px; color: #555; margin: 0 0 6px 0; line-height: 1.4;">
+                Simpan ribuan file, foto & video tanpa khawatir memori penuh. Aman di cloud, akses kapan saja.
+            </p>
+            
+            <!-- Platform Icons & CTA -->
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="background: #e8f5e9; color: #2e7d32; font-size: 10px; padding: 3px 7px; border-radius: 4px; font-weight: 600;">📱 Android App</span>
+                <span style="background: #fff3e0; color: #e65100; font-size: 10px; padding: 3px 7px; border-radius: 4px; font-weight: 600;">🌐 Browser Web</span>
+                <span style="background: #e3f2fd; color: #1565c0; font-size: 10px; padding: 3px 7px; border-radius: 4px; font-weight: 600;">💻 Desktop / PC</span>
+                
+                <span style="color: #FF6B35; font-weight: 800; font-size: 12px; margin-left: auto;">Ambil 1TB Sekarang ➔</span>
+            </div>
+        </div>
+    </a>
+</div>
+        </div>
+
+        <div class="action-card">
+            <div class="jarvis-icon">🎙️</div>
+            <h2 id="home-status">Pemandu Suara Siap</h2>
+            <p id="home-desc">Ketuk tombol di bawah untuk mengaktifkan <b>Jarvis</b> yang akan memandu pengisian laporan Anda secara interaktif.</p>
+            <button class="btn-start" id="btn-main-action" onclick="initializeHome()">🚀 Aktifkan & Mulai</button>
+        </div>
+
+        <!-- SEO SECTION: Memberi makan robot Google AdSense -->
+        <div class="seo-section">
+            <h3>Solusi Dokumentasi Kinerja Modern</h3>
+            <p>LapDok adalah aplikasi inovatif yang dirancang untuk membantu para pegawai dalam menyusun laporan kinerja harian secara cepat dan terstruktur. Kami memahami tantangan administrasi di lapangan, itulah sebabnya kami mengintegrasikan teknologi <b>Asisten Suara</b>, <b>Auto-Watermark GPS</b>, serta pencatatan <b>Peralatan &amp; Bahan</b> yang digunakan.</p>
+            
+            <h3>Mengapa Memilih LapDok?</h3>
+            <p>Setiap foto yang Anda ambil melalui aplikasi ini akan secara otomatis ditanamkan koordinat lokasi presisi, waktu terkini, dan alamat lengkap. Hasil laporan dapat langsung diekspor ke format <b>PDF standar A4</b> yang rapi dan siap cetak, dilengkapi <b>pratinjau peta satelit</b> lokasi pekerjaan di setiap halaman.</p>
+        </div>
+
+        <div class="live-card">
+            <div><span class="pulse"></span><span style="font-size: 12px; font-weight: bold; color: #7f8c8d;">SISTEM ONLINE</span></div>
+            <div style="font-size: 14px;">Perangkat Aktif: <b id="active-devices">1</b></div>
+        </div>
+
+        <!-- Footer Links untuk AdSense -->
+        <div class="footer-nav">
+            <a href="pages/about.html">Tentang Kami</a> | 
+            <a href="pages/guide.html">Panduan</a> | 
+            <a href="pages/privacy.html">Kebijakan Privasi</a>
+            <p style="margin-top: 15px; font-size: 10px; color: #bdc3c7;">© 2025 LapDok - Dokumentasi Kinerja Digital</p>
+        </div>
+    </div>
+
+    <script>
+        let isActivated = false;
+        function initializeHome() {
+            if (!isActivated) {
+                if(typeof Jarvis !== 'undefined') {
+                    Jarvis.activate();
+                    Jarvis.say("Halo! Selamat datang di aplikasi Lap Dok. Saya Jarvis, siap memandu laporan Anda.");
+                }
+                document.getElementById('home-status').innerText = "Sistem Aktif";
+                document.getElementById('home-desc').innerText = "Jarvis siap memandu. Silakan lanjut ke pengisian form.";
+                document.getElementById('btn-main-action').innerText = "📝 Mulai Isi Laporan";
+                document.getElementById('btn-main-action').style.background = "#2ecc71";
+                isActivated = true;
+            } else {
+                window.location.href = "pages/form.html";
+            }
+        }
+
+        // Data Rescue (Migration Script)
+        document.addEventListener('DOMContentLoaded', async () => {
+            const oldHistory = localStorage.getItem('lapdok_history');
+            if (oldHistory) {
+                try {
+                    const parsedOld = JSON.parse(oldHistory);
+                    if (parsedOld && parsedOld.length > 0) {
+                        const currentHistory = await localforage.getItem('lapdok_history') || [];
+                        // Merge without duplicate IDs
+                        const currentIds = currentHistory.map(h => h.id);
+                        const dataToMigrate = parsedOld.filter(h => !currentIds.includes(h.id));
+                        
+                        if (dataToMigrate.length > 0) {
+                            const newHistory = [...currentHistory, ...dataToMigrate];
+                            await localforage.setItem('lapdok_history', newHistory);
+                            console.log(`Berhasil menyelamatkan ${dataToMigrate.length} laporan lama ke IndexedDB.`);
+                        }
+                    }
+                    // We can optionally clear localStorage but safer to keep it as backup for now or clear it to save space
+                    // localStorage.removeItem('lapdok_history');
+                } catch (e) {
+                    console.error("Gagal migrasi rekam jejak lama:", e);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

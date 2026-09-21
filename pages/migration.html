@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LapDok Migration Tools</title>
+    <!-- localForage (IndexedDB Wrapper) - Dibutuhkan untuk membaca data baru -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #fdfdfd; padding: 20px; color: #333; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e1e8ed; }
+        h1 { font-size: 22px; color: #2c3e50; text-align: center; margin-bottom: 20px; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
+        .info-box { background: #e8f4fd; padding: 15px; border-left: 4px solid #3498db; font-size: 13px; margin-bottom: 25px; border-radius: 4px; }
+        .card { border: 1px solid #e1e8ed; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: center; transition: 0.3s; }
+        .card:hover { box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+        .card h2 { font-size: 18px; margin-bottom: 5px; color: #2c3e50; }
+        .card p { font-size: 13px; color: #7f8c8d; margin-bottom: 15px; }
+        button { background: #3498db; color: white; border: none; padding: 12px 20px; font-size: 14px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; transition: 0.2s; }
+        button:hover { opacity: 0.9; }
+        button.ex { background: #8e44ad; }
+        button.im { background: #e67e22; }
+        .status { margin-top: 10px; font-size: 12px; font-weight: bold; color: #27ae60; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Alat Migrasi Data LapDok 🧰</h1>
+    
+    <div class="info-box">
+        Halaman ini dibuat khusus mandiri untuk memindahkan data Anda antara komputer lokal (<code>file:///...</code>) dengan website internet (<code>jarvis-id.github.io</code>).
+    </div>
+
+    <!-- EKSPOR -->
+    <div class="card">
+        <h2>Langkah 1: Ekspor Data 📤</h2>
+        <p>Gunakan tombol ini saat Anda sedang membuka aplikasi di <b>komputer lokal Anda</b> (Tempat di mana riwayat lama Anda itu bermukim).</p>
+        <button class="ex" onclick="exportData()">⬇️ Unduh Data Backup (.json)</button>
+        <div id="export-status" class="status"></div>
+    </div>
+
+    <!-- IMPOR -->
+    <div class="card">
+        <h2>Langkah 2: Impor Data 📥</h2>
+        <p>Gunakan tombol ini saat Anda sedang membuka aplikasi melalui <b>alamat situs internet (GitHub Pages)</b> dan ingin memasukkan data yang telah diunduh tadi.</p>
+        <button class="im" onclick="document.getElementById('import-file').click()">⬆️ Unggah File Backup</button>
+        <input type="file" id="import-file" style="display: none;" accept=".json" onchange="importData(event)">
+        <div id="import-status" class="status"></div>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px;">
+        <a href="../index.html" style="color: #3498db; text-decoration: none; font-weight: bold; font-size: 14px;">⬅️ Kembali ke Aplikasi</a>
+    </div>
+</div>
+
+<script>
+    async function exportData() {
+        try {
+            // Ambil dari localForage & localStorage
+            let dbHistory = await localforage.getItem('lapdok_history');
+            if (!Array.isArray(dbHistory)) {
+                dbHistory = typeof dbHistory === 'string' ? JSON.parse(dbHistory || '[]') : [];
+            }
+            
+            let legacyData = [];
+            const oldHistory = localStorage.getItem('lapdok_history');
+            if (oldHistory) try { legacyData = JSON.parse(oldHistory); if(!Array.isArray(legacyData)) legacyData = []; } catch(e){}
+
+            // Buang duplikat ID
+            const currentIds = dbHistory.map(h => h.id);
+            const uniqueLegacy = legacyData.filter(h => !currentIds.includes(h.id));
+            const combinedHistory = [...dbHistory, ...uniqueLegacy];
+
+            if (combinedHistory.length === 0) {
+                document.getElementById('export-status').innerText = "❌ Memori Kosong. Tidak ada data untuk diekspor.";
+                document.getElementById('export-status').style.color = "#e74c3c";
+                return;
+            }
+            
+            const dataStr = JSON.stringify(combinedHistory);
+            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+            const exportName = `LapDok_Rescue_Data_${new Date().toISOString().slice(0, 10)}.json`;
+            
+            let linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportName);
+            linkElement.click();
+
+            document.getElementById('export-status').innerText = `✅ Sukses meng-ekspor ${combinedHistory.length} laporan!`;
+            document.getElementById('export-status').style.color = "#27ae60";
+
+        } catch(e) {
+            alert("Gagal mengekspor data.");
+            console.error(e);
+        }
+    }
+
+    async function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                if (!Array.isArray(importedData)) throw new Error("Format dilarang.");
+                
+                // Cek data di dalam database saat ini
+                let currentHistoryRaw = await localforage.getItem('lapdok_history');
+                let currentHistory = [];
+                if (typeof currentHistoryRaw === 'string') {
+                    try { currentHistory = JSON.parse(currentHistoryRaw); } catch(err) {}
+                } else if (Array.isArray(currentHistoryRaw)) {
+                    currentHistory = currentHistoryRaw;
+                }
+
+                // Gabungkan tanpa duplikat ID
+                const currentIds = currentHistory.map(h => h.id);
+                const dataToMigrate = importedData.filter(h => !currentIds.includes(h.id));
+                
+                if (dataToMigrate.length > 0) {
+                    await localforage.setItem('lapdok_history', [...currentHistory, ...dataToMigrate]);
+                    document.getElementById('import-status').innerText = `✅ Berhasil memasukkan ${dataToMigrate.length} laporan baru ke IndexedDB!`;
+                    document.getElementById('import-status').style.color = "#27ae60";
+                    setTimeout(() => alert("Selesai! Silakan cek menu riwayat."), 500);
+                } else {
+                    document.getElementById('import-status').innerText = "⚠️ Semua data di file ini sudah ada di dalam database website ini.";
+                    document.getElementById('import-status').style.color = "#f39c12";
+                }
+            } catch (err) {
+                document.getElementById('import-status').innerText = "❌ File Corrupt (Rusak) atau Tidak Dikenali.";
+                document.getElementById('import-status').style.color = "#e74c3c";
+                console.error(err);
+            }
+            document.getElementById('import-file').value = '';
+        };
+        reader.readAsText(file);
+    }
+</script>
+
+</body>
+</html>
