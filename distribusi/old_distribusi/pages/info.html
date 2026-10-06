@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Info App - Distribusi Stark Industries</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #5d87ff;
+            --secondary: #4974f3;
+            --accent: #00d2ff;
+            --bg: #f8fafc;
+            --text: #1e293b;
+        }
+        body {
+            font-family: 'Outfit', sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background: var(--bg);
+            margin: 0;
+            padding: 0;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-around;
+            background: white;
+            padding: 14px 0;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        .navbar a {
+            color: #64748b;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 12px;
+        }
+        .navbar a.active {
+            color: var(--primary);
+            background: rgba(93, 135, 255, 0.1);
+        }
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .header img {
+            width: 120px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 32px;
+            margin: 0;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .section h2 {
+            color: var(--primary);
+            border-bottom: 2px solid rgba(93, 135, 255, 0.1);
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 600px) {
+            .feature-grid { grid-template-columns: 1fr; }
+        }
+        .feature-item {
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+        }
+        .feature-item b {
+            display: block;
+            margin-bottom: 5px;
+            color: #0f172a;
+        }
+        .footer {
+            text-align: center;
+            padding: 40px 0;
+            color: #64748b;
+            font-size: 14px;
+        }
+        .tech-list {
+            list-style: none;
+            padding: 0;
+        }
+        .tech-list li {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+        .tech-list li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        /* PWA Install Button Styles */
+        /* PWA Install Button & Modal Styles */
+        #install-section {
+            display: block; /* Always show, but content adapts */
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 25px rgba(93, 135, 255, 0.3);
+            animation: fadeIn 0.5s ease;
+        }
+        #install-section h2 {
+            color: white;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 15px;
+        }
+        .btn-install {
+            background: white;
+            color: var(--primary);
+            border: none;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .install-guide {
+            display: block; /* Show all guides now, or structured */
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 10px;
+            font-size: 13px;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(5px);
+        }
+        .install-guide b { color: var(--accent); display: block; margin-bottom: 8px; font-size: 15px; }
+        .guide-step { margin-bottom: 6px; display: flex; gap: 8px; align-items: flex-start; }
+        .step-num { 
+            background: var(--accent); 
+            color: #1e293b; 
+            width: 20px; 
+            height: 20px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-radius: 50%; 
+            font-size: 11px; 
+            font-weight: bold;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .manual-guides {
+            margin-top: 25px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        @media (max-width: 600px) {
+            .manual-guides { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="../index.html">🏠 Dashboard</a>
+    <a href="tampildata.html">📂 Riwayat</a>
+    <a href="info.html" class="active">ℹ️ Info App</a>
+</nav>
+
+<div class="container">
+    <div class="header">
+        <img src="../assets/icons/icon-512.png" alt="Distribusi Logo">
+        <h1>Distribusi - Stark Industries</h1>
+        <p>Sistem Dokumentasi Kinerja Digital Teknisi Lapangan</p>
+    </div>
+
+    <div class="section">
+        <h2>📖 Deskripsi Proyek</h2>
+        <p><b>Distribusi (Laporan Dokumentasi)</b> adalah aplikasi web <i>Progressive Web App</i> (PWA) generasi terbaru yang dirancang khusus untuk mempermudah teknisi lapangan dalam mendokumentasikan hasil kerja secara real-time. Dibangun oleh <b>Stark Industries</b>, aplikasi ini mengedepankan efisiensi, akurasi lokasi, dan kemudahan interaksi berbasis suara.</p>
+    </div>
+
+    <div class="section">
+        <h2>✨ Fitur Unggulan</h2>
+        <div class="feature-grid">
+            <div class="feature-item">
+                <b>🎙️ Jarvis Voice Assistant</b>
+                Pemandu suara cerdas yang membantu teknisi mengisi laporan tanpa harus terpaku pada layar secara terus-menerus.
+            </div>
+            <div class="feature-item">
+                <b>📍 Geo-Watermark Precision</b>
+                Kamera cerdas yang menyematkan titik koordinat GPS, alamat real-time, dan peta lokasi langsung pada foto hasil kerja.
+            </div>
+            <div class="feature-item">
+                <b>🔢 Dynamic Item Numbering</b>
+                Sistem pengurutan item otomatis yang memastikan laporan teknis tetap rapi meskipun ada penambahan atau penghapusan data.
+            </div>
+            <div class="feature-item">
+                <b>💾 Smart Persistence</b>
+                Fitur draf otomatis yang menjamin data laporan tidak hilang meskipun browser tertutup secara tidak sengaja.
+            </div>
+            <div class="feature-item">
+                <b>🔇 Mute Controller</b>
+                Kontrol penuh atas asisten suara dengan tombol mute mengambang yang responsif.
+            </div>
+            <div class="feature-item">
+                <b>🖨️ Professional Export</b>
+                Cetak laporan ke format A4 yang sudah terstandarisasi untuk keperluan administrasi dan LKH.
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🛠️ Teknologi Project</h2>
+        <ul class="tech-list">
+            <li><b>Core Interface:</b> HTML5, CSS3 Modern, Vanilla JavaScript (ES6+).</li>
+            <li><b>Intelligence:</b> Speech Synthesis API (Jarvis Voice Engine).</li>
+            <li><b>Imaging:</b> HTML5 MediaDevices API with Custom CSS Filter Overlay.</li>
+            <li><b>Mapping:</b> Yandex Static Maps & Nominatim Geocoding Integration.</li>
+            <li><b>Infrastructure:</b> Serverless PWA with LocalStorage Persistence.</li>
+        </ul>
+    </div>
+
+    <!-- PWA Installation Section -->
+    <div id="install-section">
+        <h2>📲 Pasang Aplikasi</h2>
+        <p>Gunakan aplikasi <b>Distribusi</b> dengan akses cepat & fitur offline.</p>
+        
+        <!-- Automatic Button -->
+        <button id="install-btn" class="btn-install" style="display: none;">
+            🚀 Pasang Sekarang (Otomatis)
+        </button>
+        
+        <h3 style="margin-top:30px; font-size:16px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom:10px;">📋 Panduan Instalasi per Browser</h3>
+        
+        <div class="manual-guides">
+            <div class="install-guide">
+                <b>🌐 Google Chrome</b>
+                <div class="guide-step"><div class="step-num">1</div><span><b>Desktop:</b> Klik ikon Install (monitor kecil) di kanan kolom alamat URL ATAU klik Titik Tiga (⋮) > Save and Share > Install page as app.</span></div>
+                <div class="guide-step"><div class="step-num">2</div><span><b>Android:</b> Klik Titik Tiga (⋮) > Install app.</span></div>
+            </div>
+
+            <div class="install-guide">
+                <b>💻 Microsoft Edge</b>
+                <div class="guide-step"><div class="step-num">1</div><span>Klik <b>Titik Tiga (...)</b> di pojok kanan atas.</span></div>
+                <div class="guide-step"><div class="step-num">2</div><span>Pilih <b>Apps</b> > <b>Install this site as an app</b>.</span></div>
+            </div>
+
+            <div class="install-guide">
+                <b>🍎 iPhone / Safari (iOS)</b>
+                <div class="guide-step"><div class="step-num">1</div><span>Klik ikon <b>Share</b> (kotak dengan panah ke atas) di bagian bawah.</span></div>
+                <div class="guide-step"><div class="step-num">2</div><span>Gulir ke bawah dan pilih <b>Add to Home Screen</b>.</span></div>
+            </div>
+            
+            <div class="install-guide">
+                <b>🌌 Samsung Internet</b>
+                <div class="guide-step"><div class="step-num">1</div><span>Klik <b>Garis Tiga (≡)</b> di pojok kanan bawah.</span></div>
+                <div class="guide-step"><div class="step-num">2</div><span>Pilih <b>Add page to</b> > <b>Home screen</b>.</span></div>
+            </div>
+
+            <div class="install-guide">
+                <b>🦊 Mozilla Firefox (Hanya Mobile)</b>
+                <div class="guide-step"><div class="step-num">1</div><span>Klik <b>Titik Tiga (⋮)</b> di pojok kanan bawah.</span></div>
+                <div class="guide-step"><div class="step-num">2</div><span>Pilih <b>Install</b> atau <b>Add to Home Screen</b>.</span></div>
+            </div>
+
+            <div class="install-guide" style="background: rgba(0,0,0,0.2);">
+                <b>⚠️ Catatan:</b>
+                <div class="guide-step"><span>Untuk pengalaman terbaik, gunakan Google Chrome, Microsoft Edge, atau Safari. Browser lama seperti Internet Explorer tidak mendukung fitur ini.</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🛡️ Dirancang Oleh</h2>
+        <p style="text-align: center; font-size: 18px; font-weight: bold; margin: 10px 0;">STARK INDUSTRIES</p>
+        <p style="text-align: center; color: #64748b; font-size: 13px;">"Changing the world through advanced documentation technology."</p>
+    </div>
+
+    <div class="footer">
+        &copy; 2026 Stark Industries - Distribusi Kinerja. All Rights Reserved.
+    </div>
+</div>
+
+<script>
+    // Registrasi Service Worker agar syarat PWA terpenuhi
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('../sw.js')
+                .then(reg => console.log('SW Registered', reg))
+                .catch(err => console.log('SW Registration failed', err));
+        });
+    }
+
+    let deferredPrompt;
+    const installBtn = document.getElementById('install-btn');
+    const installSection = document.getElementById('install-section');
+
+    // Selalu tampilkan seksi instalasi
+    installSection.style.display = 'block';
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        // Tampilkan tombol otomatis jika didukung browser
+        installBtn.style.display = 'inline-flex';
+    });
+
+    installBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') { installSection.style.display = 'none'; }
+            deferredPrompt = null;
+        }
+    });
+
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        installSection.style.display = 'none';
+    }
+
+    window.addEventListener('appinstalled', () => {
+        installSection.style.display = 'none';
+    });
+</script>
+
+</body>
+</html>

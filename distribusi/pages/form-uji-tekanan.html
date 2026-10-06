@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Uji Tekanan Air Pada SR - DIS-NRW</title>
+  <meta name="theme-color" content="#005F8E">
+  <link rel="manifest" href="../assets/manifest.json">
+  <link rel="stylesheet" href="../css/main.css">
+  <script src="../js/auth-guard.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+  <script src="../js/image-compressor.js"></script>
+  <script src="../js/jarvis.js"></script>
+  <script src="../js/core.js"></script>
+  <style>
+    .grid-5-tekanan {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      padding: 10px;
+    }
+    @media(min-width: 480px) {
+      .grid-5-tekanan {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    .tekanan-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .tekanan-card-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      text-align: center;
+    }
+    .tekanan-val-box {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .tekanan-val-input {
+      flex: 1;
+      padding: 6px;
+      font-size: 11px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      text-align: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner" style="display:flex; align-items:center; justify-content:space-around; width:100%;">
+    <a href="../index.html"><span class="nav-icon">🏠</span> Beranda</a>
+    <a href="form-uji-tekanan.html" class="active"><span class="nav-icon">🔧</span> Uji Tekanan</a>
+    <a href="tampildata.html"><span class="nav-icon">📂</span> Riwayat</a>
+    <a href="javascript:void(0)" onclick="logoutUser()" title="Keluar Akun"><span class="nav-icon">🚪</span> Keluar</a>
+  </div>
+</nav>
+
+<div class="app-header" style="padding:18px 20px 16px;">
+  <div class="header-title" style="font-size:18px;">🔧 Uji Tekanan Air Pada SR</div>
+  <div class="header-sub">5 Titik: Terdekat, Menengah, Terjauh, Terendah, Tertinggi</div>
+</div>
+
+<div id="edit-banner">⚠️ MODE EDIT — Perubahan akan menimpa data lama.
+  <button onclick="cancelEdit()" style="margin-top:6px;padding:5px 12px;cursor:pointer;border-radius:6px;border:none;background:rgba(255,255,255,0.25);color:white;font-weight:bold;">Batal Edit</button>
+</div>
+
+<div class="container">
+  <div id="job-container"></div>
+  <div class="actions">
+    <button class="btn-secondary" onclick="addNewJobItem()">＋ Tambah Entri Uji Tekanan</button>
+    <button class="btn-primary" onclick="saveToHistory()">💾 Simpan ke Riwayat</button>
+  </div>
+</div>
+
+<!-- MAP MODAL -->
+<div id="map-modal" onclick="if(event.target===this) closeMap()">
+  <div class="map-modal-inner">
+    <div class="map-modal-header">
+      <div>
+        <div class="map-modal-title">📍 Tentukan Lokasi Manual</div>
+        <div class="map-modal-sub">Geser pin atau klik peta untuk menandai titik presisi</div>
+      </div>
+      <button type="button" class="btn-map-close" onclick="closeMap()" title="Tutup Peta">✖</button>
+    </div>
+    <div class="map-body-wrapper">
+      <div id="map-container"></div>
+      <div class="map-controls">
+        <button type="button" class="btn-locate" onclick="mapLocateMe()" title="Pusatkan ke Posisi GPS Saya">🎯</button>
+      </div>
+    </div>
+    <div class="map-footer">
+      <div class="map-status-box">
+        <span class="map-status" id="map-status">Klik peta untuk menandai lokasi</span>
+      </div>
+      <div class="map-footer-btns">
+        <button type="button" class="btn-map-cancel" onclick="closeMap()">Batal</button>
+        <button type="button" class="btn-map-confirm" onclick="confirmMapLocation()">✅ Pilih Lokasi</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CAMERA MODAL -->
+<div id="cam-modal">
+  <video id="cam-video" autoplay playsinline muted></video>
+  <div id="cam-overlay" style="display:none;">
+    <div class="wm-flex">
+      <div class="wm-time" id="wm-time"></div>
+      <div class="wm-line"></div>
+      <div class="wm-date-col">
+        <div class="wm-date" id="wm-date"></div>
+        <div class="wm-day" id="wm-day"></div>
+      </div>
+    </div>
+    <div class="wm-info" id="wm-gps"></div>
+    <div class="wm-info" id="wm-addr"></div>
+  </div>
+  <div class="cam-controls">
+    <button class="btn-cam-cancel" onclick="closeCamera()">✖ Batal</button>
+    <button class="btn-shutter" onclick="capturePhoto()"></button>
+    <button class="btn-cam-flip" onclick="flipCamera()">🔄</button>
+  </div>
+</div>
+
+<button id="btn-mute-toggle" onclick="Jarvis.toggleMute()">🔇 Matikan Suara</button>
+
+<script>
+let itemCount = 0;
+let editContextId = null;
+
+const titikList = [
+  { key: 'p1', label: '1. Titik Terdekat', placeholder: 'Tekanan (Bar)' },
+  { key: 'p2', label: '2. Titik Menengah', placeholder: 'Tekanan (Bar)' },
+  { key: 'p3', label: '3. Titik Terjauh', placeholder: 'Tekanan (Bar)' },
+  { key: 'p4', label: '4. Titik Terendah', placeholder: 'Tekanan (Bar)' },
+  { key: 'p5', label: '5. Titik Tertinggi', placeholder: 'Tekanan (Bar)' }
+];
+
+function getCustomMetaForSlot(slotKey, currentItem) {
+  if (slotKey === 'p1') {
+    return { mode: 'uji_tekanan', slot: 'p1', label: '1. Titik Terdekat' };
+  } else if (slotKey === 'p2') {
+    return { mode: 'uji_tekanan', slot: 'p2', label: '2. Titik Menengah', refPreviewId: `p1-${currentItem}` };
+  } else if (slotKey === 'p3') {
+    return { mode: 'uji_tekanan', slot: 'p3', label: '3. Titik Terjauh', refPreviewId: `p1-${currentItem}` };
+  } else if (slotKey === 'p4') {
+    return { mode: 'uji_tekanan', slot: 'p4', label: '4. Titik Terendah' };
+  } else if (slotKey === 'p5') {
+    return { mode: 'uji_tekanan', slot: 'p5', label: '5. Titik Tertinggi', refPreviewId: `p4-${currentItem}` };
+  }
+  return null;
+}
+
+function addNewJobItem() {
+  itemCount++;
+  const container = document.getElementById('job-container');
+  const today = getTodayISODate();
+  
+  let titikCardsHtml = '';
+  titikList.forEach((t, idx) => {
+    titikCardsHtml += `
+      <div class="tekanan-card">
+        <div class="tekanan-card-title">${t.label}</div>
+        <div class="photo-preview" id="${t.key}-${itemCount}">
+          <span class="empty-icon">📷</span>
+        </div>
+        <div class="photo-actions" style="margin-top:4px;">
+          <button class="btn-photo" onclick="openCamera('${t.key}-${itemCount}','gps-${itemCount}','addr-${itemCount}',saveDraft, getCustomMetaForSlot('${t.key}', ${itemCount}))" title="Kamera">📷</button>
+          <button class="btn-photo" onclick="document.getElementById('gal-${t.key}-${itemCount}').click()" title="Galeri">📁</button>
+        </div>
+        <input type="file" id="gal-${t.key}-${itemCount}" accept="image/*" style="display:none" onchange="processGalleryFile(this.files[0],'${t.key}-${itemCount}','gps-${itemCount}','addr-${itemCount}',saveDraft)">
+        <div class="tekanan-val-box">
+          <input type="number" step="0.1" class="tekanan-val-input" id="bar-${t.key}-${itemCount}" placeholder="Bar (misal: 1.2)" oninput="saveDraft()">
+        </div>
+      </div>
+    `;
+  });
+
+  const html = `
+    <div class="job-item" id="item-${itemCount}">
+      <div class="job-item-header">
+        <span>🔧 Entri #${itemCount} — Uji Tekanan Air Pada SR</span>
+        <button class="btn-hapus-item" onclick="this.closest('.job-item').remove(); saveDraft();">Hapus</button>
+      </div>
+
+      <input type="hidden" id="date-${itemCount}" value="${today}">
+      <input type="hidden" id="gps-${itemCount}">
+      <div id="addr-${itemCount}" style="display:none;"></div>
+
+      <input type="hidden" id="officer-${itemCount}" value="">
+      <div class="input-group">
+        <label class="input-label">👤 Petugas Bertugas</label>
+        <div style="padding:10px 14px; background:var(--surface2); border:1.5px solid var(--border); border-radius:10px; font-size:13px; font-weight:600; color:var(--primary); display:flex; align-items:center; gap:8px;">
+          <span style="font-size:18px;">👤</span>
+          <span id="officer-display-${itemCount}">Memuat nama...</span>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">🏢 Wilayah / Sumber IPA / Mata Air</label>
+        <input type="text" class="form-input" id="source-${itemCount}" placeholder="Contoh: IPA Bolu / IPA Sa'dan Malimbong / dll" oninput="saveDraft()">
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">📸 5 Titik Foto & Nilai Tekanan (Target &gt; 0,7 Bar)</label>
+        <div class="grid-5-tekanan">
+          ${titikCardsHtml}
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">📝 Keterangan Hasil Uji Tekanan</label>
+        <textarea class="form-input form-textarea" id="ta-${itemCount}" placeholder="Contoh: Pengujian tekanan air dari sumber IPA Bolu pada titik terdekat 1.5 Bar, menengah 1.2 Bar, terjauh 0.8 Bar, terendah 1.8 Bar, dan tertinggi 0.9 Bar..." oninput="saveDraft()"></textarea>
+      </div>
+
+    </div>`;
+  container.insertAdjacentHTML('beforeend', html);
+  // Auto-isi nama petugas dari sesi login
+  const dispElU = document.getElementById(`officer-display-${itemCount}`);
+  const hidElU = document.getElementById(`officer-${itemCount}`);
+  const loggedNameU = getLoggedInName();
+  if (dispElU) dispElU.textContent = loggedNameU;
+  if (hidElU) hidElU.value = loggedNameU;
+  Jarvis.pandu('foto_tekanan');
+}
+
+function onDateChange(id) {
+  const val = document.getElementById(`date-${id}`).value;
+  document.getElementById(`date-lbl-${id}`).textContent = formatIndoDate(val);
+  saveDraft();
+  Jarvis.pandu('lokasi');
+}
+
+function onLocationConfirmed() { Jarvis.pandu('foto_tekanan'); }
+
+function extractPhotoData(elId) {
+  const el = document.getElementById(elId);
+  if (!el) return null;
+  const img = el.querySelector('img')?.src;
+  if (!img) return null;
+  return {
+    img: img,
+    gps: el.dataset.gps || '',
+    addr: el.dataset.addr || '',
+    lat: el.dataset.lat ? parseFloat(el.dataset.lat) : null,
+    lng: el.dataset.lng ? parseFloat(el.dataset.lng) : null,
+    elevation: el.dataset.elevation ? parseFloat(el.dataset.elevation) : null,
+    metric: el.dataset.metric || null,
+    mapsUrl: el.dataset.mapsUrl || ''
+  };
+}
+
+async function saveDraft() {
+  const items = [];
+  document.querySelectorAll('.job-item').forEach(item => {
+    const id = item.id.split('-')[1];
+    const dateVal = document.getElementById(`date-${id}`)?.value || getTodayISODate();
+    const officerElU = document.getElementById(`officer-${id}`);
+    if (officerElU && !officerElU.value) officerElU.value = getLoggedInName();
+    items.push({
+      type: 'uji_tekanan',
+      workDate: dateVal,
+      officer: officerElU?.value || getLoggedInName(),
+      source: document.getElementById(`source-${id}`)?.value || '',
+      gps: document.getElementById(`gps-${id}`)?.value || '',
+      addr: document.getElementById(`addr-${id}`)?.innerText || '',
+      p1: extractPhotoData(`p1-${id}`),
+      p2: extractPhotoData(`p2-${id}`),
+      p3: extractPhotoData(`p3-${id}`),
+      p4: extractPhotoData(`p4-${id}`),
+      p5: extractPhotoData(`p5-${id}`),
+      bar1: document.getElementById(`bar-p1-${id}`)?.value || '',
+      bar2: document.getElementById(`bar-p2-${id}`)?.value || '',
+      bar3: document.getElementById(`bar-p3-${id}`)?.value || '',
+      bar4: document.getElementById(`bar-p4-${id}`)?.value || '',
+      bar5: document.getElementById(`bar-p5-${id}`)?.value || '',
+      desc: document.getElementById(`ta-${id}`)?.value || ''
+    });
+  });
+  await localforage.setItem(SAPDI_KEYS.DRAFT, items);
+  return items;
+}
+
+async function loadDraft() {
+  editContextId = await localforage.getItem(SAPDI_KEYS.EDIT_ID);
+  if (editContextId) document.getElementById('edit-banner').style.display = 'block';
+  const saved = await localforage.getItem(SAPDI_KEYS.DRAFT);
+  if (!saved || !saved.length || saved[0].type !== 'uji_tekanan') { addNewJobItem(); return; }
+  saved.forEach((data, idx) => {
+    addNewJobItem();
+    const id = idx + 1;
+    if (document.getElementById(`date-${id}`)) document.getElementById(`date-${id}`).value = data.workDate || getTodayISODate();
+    const officerNameU = data.officer || getLoggedInName();
+    if (document.getElementById(`officer-${id}`)) document.getElementById(`officer-${id}`).value = officerNameU;
+    if (document.getElementById(`officer-display-${id}`)) document.getElementById(`officer-display-${id}`).textContent = officerNameU;
+    if (document.getElementById(`source-${id}`)) document.getElementById(`source-${id}`).value = data.source || '';
+    if (document.getElementById(`gps-${id}`)) document.getElementById(`gps-${id}`).value = data.gps || '';
+    if (document.getElementById(`addr-${id}`)) document.getElementById(`addr-${id}`).innerText = data.addr || '';
+    if (document.getElementById(`ta-${id}`)) document.getElementById(`ta-${id}`).value = data.desc || '';
+    
+    ['p1','p2','p3','p4','p5'].forEach(k => {
+      if (data[k]) {
+        const pEl = document.getElementById(`${k}-${id}`);
+        if (pEl) {
+          const src = typeof data[k] === 'object' ? data[k].img : data[k];
+          pEl.innerHTML = `<img src="${src}">`;
+          pEl.classList.add('has-photo');
+          if (typeof data[k] === 'object') {
+            if (data[k].gps)       pEl.dataset.gps       = data[k].gps;
+            if (data[k].addr)      pEl.dataset.addr      = data[k].addr;
+            if (data[k].lat)       pEl.dataset.lat       = data[k].lat;
+            if (data[k].lng)       pEl.dataset.lng       = data[k].lng;
+            if (data[k].elevation !== null && data[k].elevation !== undefined) pEl.dataset.elevation = data[k].elevation;
+            if (data[k].metric)    pEl.dataset.metric    = data[k].metric;
+            if (data[k].mapsUrl)   pEl.dataset.mapsUrl   = data[k].mapsUrl;
+          }
+        }
+      }
+      const barKey = 'bar' + k.replace('p','');
+      if (document.getElementById(`bar-${k}-${id}`)) document.getElementById(`bar-${k}-${id}`).value = data[barKey] || '';
+    });
+  });
+}
+
+async function saveToHistory() {
+  const items = await saveDraft();
+  if (!items || !items.length) { showToast('⚠️ Tambahkan data pekerjaan terlebih dahulu!', 3000); return; }
+  let history = await localforage.getItem(SAPDI_KEYS.HISTORY) || [];
+  if (!Array.isArray(history)) history = [];
+  if (editContextId) history = history.filter(h => h.id !== parseFloat(editContextId));
+  const workDate = items[0].workDate || getTodayISODate();
+  history.push({ id: Date.now(), type: 'uji_tekanan', typeLabel: 'Uji Tekanan Air Pada SR', date: workDate, timestamp: formatIndoDate(workDate), data: items });
+  await localforage.setItem(SAPDI_KEYS.HISTORY, history);
+  await localforage.removeItem(SAPDI_KEYS.DRAFT);
+  await localforage.removeItem(SAPDI_KEYS.EDIT_ID);
+  Jarvis.pandu('selesai');
+  showToast('✅ Laporan berhasil disimpan!');
+  setTimeout(() => location.href = 'tampildata.html', 1200);
+}
+
+async function cancelEdit() {
+  await localforage.removeItem(SAPDI_KEYS.DRAFT);
+  await localforage.removeItem(SAPDI_KEYS.EDIT_ID);
+  location.reload();
+}
+
+window.onload = () => loadDraft();
+</script>
+</body>
+</html>

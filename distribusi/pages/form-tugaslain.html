@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tugas Lain-lain Perusahaan - DIS-NRW</title>
+  <meta name="theme-color" content="#005F8E">
+  <link rel="manifest" href="../assets/manifest.json">
+  <link rel="stylesheet" href="../css/main.css">
+  <script src="../js/auth-guard.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+  <script src="../js/image-compressor.js"></script>
+  <script src="../js/jarvis.js"></script>
+  <script src="../js/core.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner" style="display:flex; align-items:center; justify-content:space-around; width:100%;">
+    <a href="../index.html"><span class="nav-icon">🏠</span> Beranda</a>
+    <a href="form-tugaslain.html" class="active"><span class="nav-icon">📋</span> Tugas Lain</a>
+    <a href="tampildata.html"><span class="nav-icon">📂</span> Riwayat</a>
+    <a href="javascript:void(0)" onclick="logoutUser()" title="Keluar Akun"><span class="nav-icon">🚪</span> Keluar</a>
+  </div>
+</nav>
+
+<div class="app-header" style="padding:18px 20px 16px;">
+  <div class="header-title" style="font-size:18px;">📋 Tugas Lain-lain Perusahaan</div>
+  <div class="header-sub">3 Tahap Foto: Sebelum, Proses, dan Sesudah</div>
+</div>
+
+<div id="edit-banner">⚠️ MODE EDIT — Perubahan akan menimpa data lama.
+  <button onclick="cancelEdit()" style="margin-top:6px;padding:5px 12px;cursor:pointer;border-radius:6px;border:none;background:rgba(255,255,255,0.25);color:white;font-weight:bold;">Batal Edit</button>
+</div>
+
+<div class="container">
+  <div id="job-container"></div>
+  <div class="actions">
+    <button class="btn-secondary" onclick="addNewJobItem()">＋ Tambah Entri Tugas Lain</button>
+    <button class="btn-primary" onclick="saveToHistory()">💾 Simpan ke Riwayat</button>
+  </div>
+</div>
+
+<!-- MAP MODAL -->
+<div id="map-modal" onclick="if(event.target===this) closeMap()">
+  <div class="map-modal-inner">
+    <div class="map-modal-header">
+      <div>
+        <div class="map-modal-title">📍 Tentukan Lokasi Manual</div>
+        <div class="map-modal-sub">Geser pin atau klik peta untuk menandai titik presisi</div>
+      </div>
+      <button type="button" class="btn-map-close" onclick="closeMap()" title="Tutup Peta">✖</button>
+    </div>
+    <div class="map-body-wrapper">
+      <div id="map-container"></div>
+      <div class="map-controls">
+        <button type="button" class="btn-locate" onclick="mapLocateMe()" title="Pusatkan ke Posisi GPS Saya">🎯</button>
+      </div>
+    </div>
+    <div class="map-footer">
+      <div class="map-status-box">
+        <span class="map-status" id="map-status">Klik peta untuk menandai lokasi</span>
+      </div>
+      <div class="map-footer-btns">
+        <button type="button" class="btn-map-cancel" onclick="closeMap()">Batal</button>
+        <button type="button" class="btn-map-confirm" onclick="confirmMapLocation()">✅ Pilih Lokasi</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CAMERA MODAL -->
+<div id="cam-modal">
+  <video id="cam-video" autoplay playsinline muted></video>
+  <div id="cam-overlay" style="display:none;">
+    <div class="wm-flex">
+      <div class="wm-time" id="wm-time"></div>
+      <div class="wm-line"></div>
+      <div class="wm-date-col">
+        <div class="wm-date" id="wm-date"></div>
+        <div class="wm-day" id="wm-day"></div>
+      </div>
+    </div>
+    <div class="wm-info" id="wm-gps"></div>
+    <div class="wm-info" id="wm-addr"></div>
+  </div>
+  <div class="cam-controls">
+    <button class="btn-cam-cancel" onclick="closeCamera()">✖ Batal</button>
+    <button class="btn-shutter" onclick="capturePhoto()"></button>
+    <button class="btn-cam-flip" onclick="flipCamera()">🔄</button>
+  </div>
+</div>
+
+<button id="btn-mute-toggle" onclick="Jarvis.toggleMute()">🔇 Matikan Suara</button>
+
+<script>
+let itemCount = 0;
+let editContextId = null;
+
+const opsiTugasLain = [
+  "Mengangkat peralatan mesin seperti pompa, peralatan kelistrikan, generator set",
+  "Membendung sungai di musim kemarau",
+  "Penggantian Meter Air pelanggan tidak normal secara massal",
+  "Pemasangan SR baru apabila sedang banyak permintaan",
+  "Rehabilitasi IPA, Intake dan Jaringan Perpipaan terkena longsor / urgensi",
+  "Pekerjaan konstruksi, bangunan, dll",
+  "Hal-hal teknis kegiatan/pekerjaan Perusahaan atau Pemda",
+  "Penagihan untuk menekan piutang",
+  "Pencarian Pelanggan baru",
+  "Acara pameran",
+  "Pengawasan sambungan ilegal / pencurian air",
+  "Mewakili perusahaan pada acara seni, budaya, dan olahraga",
+  "Mewakili perusahaan pada acara keagamaan",
+  "Penugasan menyetir kendaraan / sopir pengganti",
+  "Penggantian Operator IPA yang Sakit / Cuti",
+  "Penugasan tugas lainnya berkaitan operasional perusahaan",
+  "Lain-lain / Tugas Tambahan Khusus"
+];
+
+function addNewJobItem() {
+  itemCount++;
+  const container = document.getElementById('job-container');
+  const today = getTodayISODate();
+
+  let selectOptions = '<option value="">-- Pilih Jenis Tugas Lain --</option>';
+  opsiTugasLain.forEach((opt, idx) => {
+    selectOptions += `<option value="${opt}">${idx+1}. ${opt}</option>`;
+  });
+
+  const html = `
+    <div class="job-item" id="item-${itemCount}">
+      <div class="job-item-header">
+        <span>📋 Entri #${itemCount} — Tugas Lain-lain Perusahaan</span>
+        <button class="btn-hapus-item" onclick="this.closest('.job-item').remove(); saveDraft();">Hapus</button>
+      </div>
+
+      <input type="hidden" id="date-${itemCount}" value="${today}">
+      <input type="hidden" id="gps-${itemCount}">
+      <div id="addr-${itemCount}" style="display:none;"></div>
+
+      <input type="hidden" id="officer-${itemCount}" value="">
+      <div class="input-group">
+        <label class="input-label">👤 Petugas Bertugas</label>
+        <div style="padding:10px 14px; background:var(--surface2); border:1.5px solid var(--border); border-radius:10px; font-size:13px; font-weight:600; color:var(--primary); display:flex; align-items:center; gap:8px;">
+          <span style="font-size:18px;">👤</span>
+          <span id="officer-display-${itemCount}">Memuat nama...</span>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">📌 Kategori Tugas Tambahan</label>
+        <select class="form-input" id="kategori-${itemCount}" onchange="onKategoriChange(${itemCount})">
+          ${selectOptions}
+        </select>
+      </div>
+
+      <div class="photo-grid-header grid-3">
+        <div>1. SEBELUM</div>
+        <div>2. PROSES</div>
+        <div>3. SESUDAH</div>
+      </div>
+
+      <div class="photo-grid-body grid-3">
+        <div class="photo-col">
+          <div class="photo-actions">
+            <button class="btn-photo" onclick="openCamera('p1-${itemCount}','gps-${itemCount}','addr-${itemCount}',() => Jarvis.pandu('foto_proses'))">📷</button>
+            <button class="btn-photo" onclick="document.getElementById('gal-1-${itemCount}').click()">📁</button>
+          </div>
+          <input type="file" id="gal-1-${itemCount}" accept="image/*" style="display:none" onchange="processGalleryFile(this.files[0],'p1-${itemCount}','gps-${itemCount}','addr-${itemCount}',() => { saveDraft(); Jarvis.pandu('foto_proses'); })">
+          <div class="photo-preview" id="p1-${itemCount}"><span class="empty-icon">📷</span></div>
+          <div class="photo-label">Sebelum</div>
+        </div>
+
+        <div class="photo-col">
+          <div class="photo-actions">
+            <button class="btn-photo" onclick="openCamera('p2-${itemCount}','gps-${itemCount}','addr-${itemCount}',() => Jarvis.pandu('foto_sesudah'))">📷</button>
+            <button class="btn-photo" onclick="document.getElementById('gal-2-${itemCount}').click()">📁</button>
+          </div>
+          <input type="file" id="gal-2-${itemCount}" accept="image/*" style="display:none" onchange="processGalleryFile(this.files[0],'p2-${itemCount}','gps-${itemCount}','addr-${itemCount}',() => { saveDraft(); Jarvis.pandu('foto_sesudah'); })">
+          <div class="photo-preview" id="p2-${itemCount}"><span class="empty-icon">📷</span></div>
+          <div class="photo-label">Proses</div>
+        </div>
+
+        <div class="photo-col">
+          <div class="photo-actions">
+            <button class="btn-photo" onclick="openCamera('p3-${itemCount}','gps-${itemCount}','addr-${itemCount}',() => Jarvis.pandu('keterangan'))">📷</button>
+            <button class="btn-photo" onclick="document.getElementById('gal-3-${itemCount}').click()">📁</button>
+          </div>
+          <input type="file" id="gal-3-${itemCount}" accept="image/*" style="display:none" onchange="processGalleryFile(this.files[0],'p3-${itemCount}','gps-${itemCount}','addr-${itemCount}',() => { saveDraft(); Jarvis.pandu('keterangan'); })">
+          <div class="photo-preview" id="p3-${itemCount}"><span class="empty-icon">📷</span></div>
+          <div class="photo-label">Sesudah</div>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">📝 Keterangan Kegiatan</label>
+        <textarea class="form-input form-textarea" id="ta-${itemCount}" placeholder="Keterangan rincian tugas tambahan yang dilaksanakan..." oninput="saveDraft()"></textarea>
+      </div>
+
+    </div>`;
+  container.insertAdjacentHTML('beforeend', html);
+  // Auto-isi nama petugas dari sesi login
+  const dispEl = document.getElementById(`officer-display-${itemCount}`);
+  const hidEl = document.getElementById(`officer-${itemCount}`);
+  const loggedName = getLoggedInName();
+  if (dispEl) dispEl.textContent = loggedName;
+  if (hidEl) hidEl.value = loggedName;
+  Jarvis.pandu('tanggal');
+}
+
+function onDateChange(id) {
+  const val = document.getElementById(`date-${id}`).value;
+  document.getElementById(`date-lbl-${id}`).textContent = formatIndoDate(val);
+  saveDraft();
+  Jarvis.pandu('lokasi');
+}
+
+function onKategoriChange(id) {
+  const kat = document.getElementById(`kat-${id}`).value;
+  const ta = document.getElementById(`ta-${id}`);
+  if (kat && (!ta.value || ta.value.trim() === '')) {
+    ta.value = `Pelaksanaan kegiatan tugas tambahan: ${kat}.`;
+  }
+  saveDraft();
+}
+
+function onLocationConfirmed() { Jarvis.pandu('foto_sebelum'); }
+
+function extractPhotoData(elId) {
+  const el = document.getElementById(elId);
+  if (!el) return null;
+  const img = el.querySelector('img')?.src;
+  if (!img) return null;
+  return {
+    img: img,
+    gps: el.dataset.gps || '',
+    addr: el.dataset.addr || '',
+    lat: el.dataset.lat ? parseFloat(el.dataset.lat) : null,
+    lng: el.dataset.lng ? parseFloat(el.dataset.lng) : null,
+    elevation: el.dataset.elevation ? parseFloat(el.dataset.elevation) : null,
+    mapsUrl: el.dataset.mapsUrl || ''
+  };
+}
+
+async function saveDraft() {
+  const items = [];
+  document.querySelectorAll('.job-item').forEach(item => {
+    const id = item.id.split('-')[1];
+    const dateVal = document.getElementById(`date-${id}`)?.value || getTodayISODate();
+    // Auto-isi nama dari sesi login jika belum ada
+    const officerElT = document.getElementById(`officer-${id}`);
+    if (officerElT && !officerElT.value) officerElT.value = getLoggedInName();
+    items.push({
+      type: 'tugaslain',
+      workDate: dateVal,
+      officer: officerElT?.value || getLoggedInName(),
+      kategori: document.getElementById(`kat-${id}`)?.value || 'Lainnya',
+      gps: document.getElementById(`gps-${id}`)?.value || '',
+      addr: document.getElementById(`addr-${id}`)?.innerText || '',
+      p1: extractPhotoData(`p1-${id}`),
+      p2: extractPhotoData(`p2-${id}`),
+      p3: extractPhotoData(`p3-${id}`),
+      desc: document.getElementById(`ta-${id}`)?.value || '',
+      alat: document.getElementById(`alat-${id}`)?.value || '',
+      bahan: document.getElementById(`bahan-${id}`)?.value || ''
+    });
+  });
+  await localforage.setItem(SAPDI_KEYS.DRAFT, items);
+  return items;
+}
+
+async function loadDraft() {
+  editContextId = await localforage.getItem(SAPDI_KEYS.EDIT_ID);
+  if (editContextId) document.getElementById('edit-banner').style.display = 'block';
+  const saved = await localforage.getItem(SAPDI_KEYS.DRAFT);
+  if (!saved || !saved.length || saved[0].type !== 'tugaslain') { addNewJobItem(); return; }
+  saved.forEach((data, idx) => {
+    addNewJobItem();
+    const id = idx + 1;
+    if (document.getElementById(`date-${id}`)) document.getElementById(`date-${id}`).value = data.workDate || getTodayISODate();
+    const officerName = data.officer || getLoggedInName();
+    if (document.getElementById(`officer-${id}`)) document.getElementById(`officer-${id}`).value = officerName;
+    if (document.getElementById(`officer-display-${id}`)) document.getElementById(`officer-display-${id}`).textContent = officerName;
+    if (document.getElementById(`kat-${id}`)) document.getElementById(`kat-${id}`).value = data.kategori || 'Lainnya';
+    if (document.getElementById(`gps-${id}`)) document.getElementById(`gps-${id}`).value = data.gps || '';
+    if (document.getElementById(`addr-${id}`)) document.getElementById(`addr-${id}`).innerText = data.addr || '';
+    if (document.getElementById(`ta-${id}`)) document.getElementById(`ta-${id}`).value = data.desc || '';
+    if (document.getElementById(`alat-${id}`)) document.getElementById(`alat-${id}`).value = data.alat || '';
+    if (document.getElementById(`bahan-${id}`)) document.getElementById(`bahan-${id}`).value = data.bahan || '';
+    
+    ['p1','p2','p3'].forEach(k => {
+      if (data[k]) {
+        const pEl = document.getElementById(`${k}-${id}`);
+        if (pEl) {
+          const src = typeof data[k] === 'object' ? data[k].img : data[k];
+          pEl.innerHTML = `<img src="${src}">`;
+          pEl.classList.add('has-photo');
+          if (typeof data[k] === 'object') {
+            if (data[k].gps) pEl.dataset.gps = data[k].gps;
+            if (data[k].addr) pEl.dataset.addr = data[k].addr;
+            if (data[k].lat) pEl.dataset.lat = data[k].lat;
+            if (data[k].lng) pEl.dataset.lng = data[k].lng;
+            if (data[k].elevation !== null && data[k].elevation !== undefined) pEl.dataset.elevation = data[k].elevation;
+            if (data[k].mapsUrl) pEl.dataset.mapsUrl = data[k].mapsUrl;
+          }
+        }
+      }
+    });
+  });
+}
+
+async function saveToHistory() {
+  const items = await saveDraft();
+  if (!items || !items.length) { showToast('⚠️ Tambahkan data pekerjaan terlebih dahulu!', 3000); return; }
+  let history = await localforage.getItem(SAPDI_KEYS.HISTORY) || [];
+  if (!Array.isArray(history)) history = [];
+  if (editContextId) history = history.filter(h => h.id !== parseFloat(editContextId));
+  const workDate = items[0].workDate || getTodayISODate();
+  history.push({ id: Date.now(), type: 'tugaslain', typeLabel: 'Tugas Lain-lain Perusahaan', date: workDate, timestamp: formatIndoDate(workDate), data: items });
+  await localforage.setItem(SAPDI_KEYS.HISTORY, history);
+  await localforage.removeItem(SAPDI_KEYS.DRAFT);
+  await localforage.removeItem(SAPDI_KEYS.EDIT_ID);
+  Jarvis.pandu('selesai');
+  showToast('✅ Laporan tugas lain berhasil disimpan!');
+  setTimeout(() => location.href = 'tampildata.html', 1200);
+}
+
+async function cancelEdit() {
+  await localforage.removeItem(SAPDI_KEYS.DRAFT);
+  await localforage.removeItem(SAPDI_KEYS.EDIT_ID);
+  location.reload();
+}
+
+window.onload = () => loadDraft();
+</script>
+</body>
+</html>

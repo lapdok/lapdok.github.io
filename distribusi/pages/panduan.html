@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Panduan Penggunaan - DIS-NRW</title>
+  <meta name="theme-color" content="#005F8E">
+  <link rel="stylesheet" href="../css/main.css">
+  <script src="../js/auth-guard.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner" style="display:flex; align-items:center; justify-content:space-around; width:100%;">
+    <a href="../index.html"><span class="nav-icon">🏠</span> Beranda</a>
+    <a href="tampildata.html"><span class="nav-icon">📂</span> Riwayat</a>
+    <a href="javascript:void(0)" onclick="logoutUser()" title="Keluar Akun"><span class="nav-icon">🚪</span> Keluar</a>
+  </div>
+</nav>
+
+<div class="app-header" style="padding:18px 20px 16px;">
+  <div class="header-title" style="font-size:18px;">📖 Panduan Penggunaan DIS-NRW</div>
+  <div class="header-sub">Tata Cara Pengisian, Dokumentasi & Standar Teknis</div>
+</div>
+
+<div class="container" style="padding-top:14px; padding-bottom:30px;">
+
+  <!-- 1. STANDAR FOTO BERDASARKAN JENIS PEKERJAAN -->
+  <div class="job-item" style="padding:16px; margin-bottom:14px;">
+    <h3 style="color:var(--primary); margin-bottom:10px; font-size:14.5px;">1. Standar Foto Sesuai Jenis Pekerjaan</h3>
+    <ul style="padding-left:18px; font-size:12px; color:var(--text2); line-height:1.8;">
+      <li><strong>🎖️ Apel Pagi / Rapat:</strong> Wajib 1 foto selfie/barisan apel. Hasil cetak berformat 1 foto ukuran penuh (*Full-Width*).</li>
+      <li><strong>🔧 Uji Tekanan Air Pada SR:</strong> Wajib 5 foto manometer (3 foto uji rentang jarak: Terdekat, Menengah, Terjauh; dan 2 foto uji elevasi: Terendah dan Tertinggi) dengan target &gt; 0,7 Bar.</li>
+      <li><strong>🔩 Buka Tutup Valve:</strong> Foto dinamis (*unlimited*) untuk merekam posisi dan jumlah putaran katup/valve box di jaringan pipa.</li>
+      <li><strong>🚰 Perbaikan Kebocoran Pipa:</strong> Wajib 3 foto bertahap (Sebelum galian, Proses pengerjaan/pemasangan material, dan Sesudah tuntas diperbaiki).</li>
+      <li><strong>📋 Tugas Lain-lain:</strong> Wajib 3 foto bertahap (Sebelum, Proses, Sesudah) dilengkapi pemilihan kategori tugas penugasan.</li>
+    </ul>
+  </div>
+
+  <!-- 2. FITUR KAMERA & ROTASI OTOMATIS -->
+  <div class="job-item" style="padding:16px; margin-bottom:14px;">
+    <h3 style="color:var(--primary); margin-bottom:10px; font-size:14.5px;">2. Fitur Kamera Presisi & Rotasi Layar</h3>
+    <ul style="padding-left:18px; font-size:12px; color:var(--text2); line-height:1.8;">
+      <li><strong>Tampilan Penuh (WYSIWYG):</strong> Layar bidik kamera menampilkan 100% bidang pandang tanpa pemotongan (*no-cropping*), sehingga apa yang Anda lihat di layar adalah foto yang tersimpan persis di PDF.</li>
+      <li><strong>Rotasi Otomatis (Tegak / Miring):</strong> Mendukung pemotretan posisi tegak (*portrait*) maupun miring (*landscape*). Saat HP dimiringkan, tombol jepret otomatis berpindah ke samping kanan untuk kenyamanan ibu jari.</li>
+      <li><strong>Kamera Depan Cermin (Selfie):</strong> Kamera depan otomatis dicerminkan seperti cermin alami tanpa membalik tulisan watermark.</li>
+    </ul>
+  </div>
+
+  <!-- 3. KUSTOMISASI GPS & KETINGGIAN ELEVASI -->
+  <div class="job-item" style="padding:16px; margin-bottom:14px;">
+    <h3 style="color:var(--primary); margin-bottom:10px; font-size:14.5px;">3. Penyesuaian GPS Manual & Elevasi (mdpl)</h3>
+    <ul style="padding-left:18px; font-size:12px; color:var(--text2); line-height:1.8;">
+      <li><strong>Penentuan Lokasi Manual via Peta:</strong> Jika sinyal GPS lemah atau berada di dalam ruangan/gedung, tekan tombol <strong>📍 Peta</strong> pada layar kamera untuk memilih koordinat secara tepat.</li>
+      <li><strong>Opsi "Gunakan Lokasi Sama":</strong> Untuk pemotretan beruntun pada titik kerja yang sama (seperti foto Proses dan Sesudah), cukup centang kotak pilihan tanpa perlu mengambil koordinat ulang.</li>
+      <li><strong>Perekaman Ketinggian Otomatis:</strong> Aplikasi otomatis mendeteksi ketinggian elevasi topografi (mdpl) untuk keperluan analisis hidrolika tekanan air.</li>
+    </ul>
+  </div>
+
+  <!-- 4. CETAK & EKSPOR PDF -->
+  <div class="job-item" style="padding:16px; margin-bottom:14px;">
+    <h3 style="color:var(--primary); margin-bottom:10px; font-size:14.5px;">4. Cetak PDF & Kesiapan Pemeriksaan</h3>
+    <p style="font-size:12px; color:var(--text2); line-height:1.7; margin-bottom:8px;">
+      Buka menu <strong>📂 Riwayat Laporan</strong>, pilih laporan, lalu tekan tombol <strong>🖨️ Cetak PDF</strong>. Dokumen diformat rapi standar A4 dengan analisis spasial lengkap:
+    </p>
+    <ul style="padding-left:18px; font-size:11.5px; color:var(--text2); line-height:1.7;">
+      <li><strong>Pemisahan Bidang Analisis:</strong> Analisis jarak jangkauan pipa dan analisis beda tinggi hidrolika disajikan di tabel masing-masing secara terpisah.</li>
+      <li><strong>Peta Satelit Adaptif:</strong> Menampilkan citra satelit rute tracking otomatis yang di-zoom secara presisi.</li>
+    </ul>
+  </div>
+
+  <div style="text-align:center; margin-top:20px;">
+    <a href="../index.html" class="btn-primary" style="display:inline-flex; text-decoration:none; padding:12px 26px;">← Kembali ke Beranda</a>
+  </div>
+
+</div>
+
+<!-- Footer Navigasi -->
+<div style="text-align:center; padding:20px 16px; font-size:11px; color:var(--text3);">
+  <div style="margin-bottom:6px;">
+    <a href="panduan.html" style="color:var(--primary); text-decoration:none; margin:0 8px; font-weight:700;">Panduan</a>
+    <a href="pertanggungjawaban.html" style="color:var(--primary); text-decoration:none; margin:0 8px;">Standar Pemeriksaan</a>
+    <a href="privacy.html" style="color:var(--primary); text-decoration:none; margin:0 8px;">Privasi</a>
+  </div>
+  DIS-NRW · Sistem Dokumentasi Terpadu & Terverifikasi
+</div>
+
+</body>
+</html>

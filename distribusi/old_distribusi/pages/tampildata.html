@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riwayat - Perumdam Amerta Toraya</title>
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2642522351768171"
+     crossorigin="anonymous"></script>
+    <style>
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; padding-bottom: 60px; }
+        .navbar { display: flex; justify-content: space-around; background: #5d87ff; padding: 12px 0; }
+        .navbar a { color: white; text-decoration: none; font-weight: bold; font-size: 13px; opacity: 0.7; }
+        .navbar a.active { opacity: 1; border-bottom: 2px solid #fff; }
+        .container { max-width: 800px; margin: auto; padding: 15px; }
+        .btn-print { background: #27ae60; color: white; border: none; padding: 15px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .report-card { background: white; padding: 0; margin-bottom: 15px; border-radius: 12px; border: 1px solid #e0e0e0; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .card-header { padding: 10px 15px; background: #f8fafc; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; }
+        .item-detail { display: flex; padding: 15px; gap: 15px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.2s; }
+        .item-detail:last-child { border-bottom: none; }
+        .item-detail:hover { background: #f0f7ff; }
+        .photo-side { width: 80px; height: 80px; flex-shrink: 0; border-radius: 8px; overflow: hidden; background: #f1f5f9; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; }
+        .mini-img { width: 100%; height: 100%; object-fit: cover; }
+        .info-side { flex-grow: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+        .job-title { font-weight: 700; color: #1e293b; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .job-date { font-size: 10px; color: #64748b; font-weight: 600; }
+        .job-indicator { font-size: 11px; color: #5d87ff; font-weight: 500; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .job-desc { font-size: 10.5px; color: #475569; line-height: 1.4; margin-top: 2px; font-style: italic; }
+        .no-img { font-size: 9px; color: #94a3b8; text-align: center; }
+        .btn-delete { background:#e74c3c; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:10px; cursor:pointer; font-weight: bold; }
+        
+        @media print {
+            @page { size: A4; margin: 10mm; }
+            body { background: white !important; }
+            .navbar, .btn-print, #f-date, #history-list, .btn-mute-float, .sticky-footer-slim, [style*="display: flex; flex-direction: column; align-items: center; border-top: 1px dashed"] { display: none !important; }
+            .container { display: none !important; }
+            #print-area { display: block !important; background: white !important; }
+            .page-container { position: relative; background: white !important; page-break-after: auto; padding-bottom: 20px; }
+            .page-container:not(:last-child) { page-break-after: always; }
+            .print-header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 20px; padding-bottom: 5px; page-break-after: avoid; }
+            .job-box { border: 1px solid #000; margin-bottom: 10px; page-break-inside: avoid; }
+            .job-head { background: none !important; padding: 4px 8px; font-weight: bold; font-size: 10px; border-bottom: 1px solid #000; }
+            .job-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; border-bottom: 1px solid #000; }
+            .job-col { border-right: 1px solid #000; padding: 3px; text-align: center; }
+            .job-img { width: 55mm; height: 45mm; object-fit: contain; }
+            .job-desc { padding: 5px 8px; font-size: 10px; line-height: 1.4; }
+            .print-row { display: flex; margin-bottom: 2px; align-items: flex-start; }
+            .print-label { width: 80px; font-weight: bold; flex-shrink: 0; }
+            .print-sep { width: 15px; flex-shrink: 0; text-align: center; font-weight: bold; }
+            .print-val { flex-grow: 1; word-wrap: break-word; }
+        }
+        .btn-mute-float {
+            position: fixed;
+            bottom: 45px; /* Lower than before, above slim footer */
+            right: 20px;
+            z-index: 1000;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: none;
+            background: #5d87ff;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            font-size: 18px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .btn-mute-float.muted {
+            background: #94a3b8;
+        }
+
+        .developer-info {
+            font-size: 10px;
+            color: white;
+            text-align: center;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            padding: 8px;
+        }
+        .sticky-footer-slim {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #5d87ff;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        #print-area { display: none; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="../index.html">🏠 Dashboard</a>
+    <a href="tampildata.html" class="active">📂 Riwayat</a>
+    <a href="info.html">ℹ️ Info App</a>
+</nav>
+
+<div class="container">
+    <input type="date" id="f-date" onchange="updateUI()" onfocus="Jarvis.say('Filter tanggal.')" style="width:100%; padding:10px; margin-bottom:10px; border-radius:6px; border:1px solid #ccc;">
+    <button class="btn-print" id="print-btn" onclick="Jarvis.say('Siap cetak.'); window.print()" disabled>🖨️ Cetak Laporan Terpilih (0)</button>
+    
+    <div id="history-list" style="margin-top:15px;"></div>
+
+    <!-- Inline Footer Ad (End of History) -->
+    <div style="margin-top: 25px; margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; border-top: 1px dashed #ced4da; padding-top: 20px;">
+        <span class="ad-label" style="font-size: 8px; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px;">Advertisement</span>
+        <ins class="adsbygoogle"
+             style="display:inline-block;width:320px;height:50px"
+             data-ad-client="ca-pub-2642522351768171"
+             data-ad-slot="7918954512"></ins>
+        <script>
+             (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+    </div>
+</div>
+</div>
+
+<div id="print-area"></div>
+
+<button id="jarvis-mute-toggle" class="btn-mute-float" onclick="toggleJarvisMute()">🔊</button>
+
+<script src="../assets/js/jarvis.js"></script>
+<script>
+    function formatDateLong(dateStr) {
+        if(!dateStr) return "-";
+        const date = new Date(dateStr);
+        if(isNaN(date)) return dateStr;
+        return date.toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+    }
+
+    function updateUI() {
+        const fd = document.getElementById('f-date').value;
+        let data = JSON.parse(localStorage.getItem('lapdok_history') || '[]');
+        if(fd) data = data.filter(h => h.timestamp === fd);
+
+        const list = document.getElementById('history-list');
+        list.innerHTML = data.reverse().map(h => {
+            const items = Array.isArray(h.data) ? h.data : (h.data.items || []);
+            const jobId = !Array.isArray(h.data) ? h.data.jobId : "2"; // Default ke SOP jika data lama
+            const jobTitles = {
+                "0": "Tugas Lain-lain Perusahaan",
+                "1": "Penanganan Aduan Pelanggan",
+                "2": "Tupoksi Sesuai SOP",
+                "3": "Koordinasi Produksi & Aduan",
+                "4": "Tugas Lain dari Atasan"
+            };
+            const title = jobTitles[jobId] || "Pekerjaan";
+            
+            const itemsHtml = items.map(it => `
+                <div class="item-detail" onclick="restoreToEditor(${h.id})">
+                    <div class="photo-side">
+                        ${it.p1 ? `<img src="${it.p1}" class="mini-img">` : `<div class="no-img">Tanpa Foto</div>`}
+                    </div>
+                    <div class="info-side">
+                        <div class="job-title">${title}</div>
+                        <div class="job-date">📅 ${formatDateLong(it.workDate || h.timestamp)}</div>
+                        <div class="job-indicator">${it.indikator || '-'}</div>
+                        ${it.desc ? `<div class="job-desc">${it.desc}</div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            return `
+            <div class="report-card">
+                <div class="card-header">
+                    <input type="checkbox" class="cb" value="${h.id}" onchange="updateBtn()" onclick="Jarvis.say(this.checked ? 'Dipilih.' : 'Batal.')">
+                    <div style="font-size: 9px; color: #94a3b8; font-weight: bold;">#${h.id.toString().slice(-6)}</div>
+                    <button onclick="deleteItem(event, ${h.id})" class="btn-delete">Hapus</button>
+                </div>
+                <div class="card-body">
+                    ${itemsHtml}
+                </div>
+            </div>`;
+        }).join('');
+        updateBtn();
+    }
+
+    function restoreToEditor(id) {
+        const all = JSON.parse(localStorage.getItem('lapdok_history') || '[]');
+        const entry = all.find(h => h.id === id);
+        if(entry) {
+            localStorage.setItem('lapdok_draft', JSON.stringify(entry.data));
+            localStorage.setItem('lapdok_edit_context', id);
+            window.location.href = "lapor.html";
+        }
+    }
+
+    function updateBtn() {
+        const count = document.querySelectorAll('.cb:checked').length;
+        document.getElementById('print-btn').disabled = count === 0;
+        document.getElementById('print-btn').innerText = `🖨️ Cetak Laporan Terpilih (${count})`;
+        if (count > 0 && sessionStorage.getItem('jarvis_activated') === 'true') {
+            // Kita beri sedikit delay agar tidak tumpang tindih dengan suara checkbox
+            setTimeout(() => {
+                if(count === 1) Jarvis.say("1 laporan siap. Klik cetak.");
+                else Jarvis.say(`${count} laporan siap. Klik cetak.`);
+            }, 1000);
+        }
+        generatePrintArea();
+    }
+
+    function generatePrintArea() {
+        const ids = Array.from(document.querySelectorAll('.cb:checked')).map(c => parseFloat(c.value));
+        const all = JSON.parse(localStorage.getItem('lapdok_history') || '[]');
+        const target = document.getElementById('print-area'); target.innerHTML = '';
+        
+        let allItems = [];
+        all.filter(h => ids.includes(h.id)).forEach(h => {
+            const hItems = Array.isArray(h.data) ? h.data : (h.data.items || []);
+            const jobId = !Array.isArray(h.data) ? h.data.jobId : "2";
+            const jobTitles = {
+                "0": "Tugas Lain-lain Perusahaan",
+                "1": "Penanganan Aduan Pelanggan",
+                "2": "Tupoksi Sesuai SOP",
+                "3": "Koordinasi Produksi & Aduan",
+                "4": "Tugas Lain dari Atasan"
+            };
+            const title = jobTitles[jobId] || "Pekerjaan";
+
+            hItems.forEach(d => {
+                if(!d.workDate) d.workDate = h.timestamp;
+                d.parentTitle = title;
+                allItems.push(d);
+            });
+        });
+
+        const perPage = 3; 
+        const totalPages = Math.ceil(allItems.length / perPage);
+        
+        for(let i=0; i < allItems.length; i += perPage) {
+            const page = document.createElement('div'); 
+            page.className = 'page-container';
+            const chunk = allItems.slice(i, i + perPage);
+            const currentPage = Math.floor(i / perPage) + 1;
+
+            let html = `<div class="print-header"><h2 style="margin:0;">DOKUMENTASI LAPORAN KINERJA HARIAN</h2></div>`;
+            html += chunk.map((it, idx) => `
+                <div class="job-box">
+                    <div class="job-head">ITEM #${i + idx + 1} | TANGGAL: ${formatDateLong(it.workDate)}</div>
+                    <div class="job-grid">
+                        ${[it.p1, it.p2, it.p3].map((s, p) => `
+                        <div class="job-col">
+                            <div style="font-size:7px; font-weight:bold;">${p==0?'SEBELUM':p==1?'PROSES':'SESUDAH'}</div>
+                            ${s ? `<img class="job-img" src="${s}">` : '-'}
+                        </div>`).join('')}
+                    </div>
+                    <div class="job-desc">
+                        <div class="print-row"><span class="print-label">TUPOKSI</span><span class="print-sep">:</span><span class="print-val">${it.parentTitle}</span></div>
+                        <div class="print-row"><span class="print-label">INDIKATOR</span><span class="print-sep">:</span><span class="print-val">${it.indikator || '-'}</span></div>
+                        <div class="print-row"><span class="print-label">KET</span><span class="print-sep">:</span><span class="print-val">${it.desc || '-'}</span></div>
+                    </div>
+                </div>`).join('');
+            
+            // Nomor halaman mengikuti konten
+            html += `<div style="text-align:right; font-size:10px; font-weight:bold; margin-top:10px;">Halaman ${currentPage} dari ${totalPages}</div>`;
+            
+            page.innerHTML = html; 
+            target.appendChild(page);
+        }
+    }
+
+    function deleteItem(e, id) {
+        e.stopPropagation();
+        if(confirm("Hapus data riwayat ini permanen?")) {
+            let h = JSON.parse(localStorage.getItem('lapdok_history'));
+            localStorage.setItem('lapdok_history', JSON.stringify(h.filter(x => x.id !== id)));
+            updateUI();
+        }
+    }
+
+    function toggleJarvisMute() {
+        const isMuted = Jarvis.toggleMute();
+        const btn = document.getElementById('jarvis-mute-toggle');
+        btn.innerText = isMuted ? "🔇" : "🔊";
+        btn.classList.toggle('muted', isMuted);
+    }
+
+    function initMuteButtonState() {
+        const btn = document.getElementById('jarvis-mute-toggle');
+        if (btn) {
+            btn.innerText = Jarvis.muted ? "🔇" : "🔊";
+            btn.classList.toggle('muted', Jarvis.muted);
+        }
+    }
+
+    window.onload = () => {
+        initMuteButtonState();
+        updateUI();
+        // Cek apakah Jarvis diaktifkan di Dashboard
+        if (sessionStorage.getItem('jarvis_activated') === 'true') {
+            Jarvis.activate();
+            Jarvis.say("Centang kotak, lalu klik cetak.");
+        }
+    };
+</script>
+
+<!-- Sticky Developer Info Footer -->
+<div class="sticky-footer-slim">
+    <div class="developer-info">
+        Developed by Stark Industries
+    </div>
+</div>
+</body>
+</html>

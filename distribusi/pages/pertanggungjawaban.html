@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Keabsahan & Standar Pemeriksaan - DIS-NRW</title>
+  <meta name="theme-color" content="#005F8E">
+  <link rel="stylesheet" href="../css/main.css">
+  <script src="../js/auth-guard.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner" style="display:flex; align-items:center; justify-content:space-around; width:100%;">
+    <a href="../index.html"><span class="nav-icon">🏠</span> Beranda</a>
+    <a href="tampildata.html"><span class="nav-icon">📂</span> Riwayat</a>
+    <a href="javascript:void(0)" onclick="logoutUser()" title="Keluar Akun"><span class="nav-icon">🚪</span> Keluar</a>
+  </div>
+</nav>
+
+<div class="app-header" style="padding:18px 20px 16px;">
+  <div class="header-title" style="font-size:18px;">🛡️ Keabsahan & Standar Pemeriksaan</div>
+  <div class="header-sub">Dasar Ilmiah, Geospasial, dan Pembuktian Data Lapangan</div>
+</div>
+
+<div class="container" style="padding-top:14px; padding-bottom:30px;">
+
+  <!-- KOTAK PERNYATAAN RESMI -->
+  <div style="background:linear-gradient(135deg, #005F8E 0%, #0284C7 100%); color:white; border-radius:var(--radius); padding:16px 18px; margin-bottom:16px; box-shadow:0 4px 14px rgba(0,95,142,0.3);">
+    <div style="font-size:14px; font-weight:800; margin-bottom:6px; letter-spacing:0.3px;">📜 Pernyataan Keabsahan Data Teknis</div>
+    <p style="font-size:12px; line-height:1.7; opacity:0.95; margin:0;">
+      Seluruh data rekaman kinerja lapangan dan parameter teknis yang dihasilkan ke dalam dokumen PDF dibangun di atas metodologi geospasial internasional, model elevasi digital global, serta sistem perekaman digital berstempel waktu nyata yang independen. Seluruh data dapat diuji dan diverifikasi kembali kapan saja untuk keperluan <strong>Pemeriksaan</strong>.
+    </p>
+  </div>
+
+  <!-- 1. STANDAR PERHITUNGAN JARAK -->
+  <div class="job-item" style="padding:16px; margin-bottom:14px;">
+    <h3 style="color:var(--primary); margin-bottom:10px; font-size:14px; display:flex; align-items:center; gap:8px;">
+      <span>📏</span> 1. Standar Geospasial Jarak (Formula Haversine WGS-84)
+    </h3>
+    <p style="font-size:12px; color:var(--text2); line-height:1.7; margin-bottom:8px;">
+      Perhitungan jarak antar-titik koordinat menggunakan <strong>Formula Haversine</strong> berbasis model ellipsoid bumi <strong>WGS-84 (World Geodetic System 1984)</strong> dengan radius bumi rata-rata <strong>6.371.008,8 meter</strong>.
+    </p>
+    <div style="background:#F1F5F9; border-left:3px solid var(--primary); padding:8px 12px; font-size:11.5px; color:#334155; line-height:1.6; border-radius:0 6px 6px 0; margin-bottom:8px;">
+      <strong>Metode Baku:</strong> Formula yang sama digunakan oleh perangkat lunak pemetaan profesional seperti <em>ESRI ArcGIS, QGIS, dan Google Earth</em>.
+    </div>
+    <ul style="padding-left:18px; font-size:11.5px; color:var(--text2); line-height:1.7;">
+      <li><strong>Presisi Koordinat:</strong> Menggunakan format desimal 6 angka di belakang koma dengan tingkat ketelitian hingga ± 0,11 meter.</li>
+      <li><strong>Dapat Diuji Ulang:</strong> Tim pemeriksa dapat memasukkan koordinat ke aplikasi pemetaan independen mana pun dan akan memperoleh hasil jarak yang identik.</li>
+    </ul>
+  </div>
+
+  <!-- 2. STANDAR ELEVASI & HIDROLIKA -->
+  <div class="job-item" style="padding:16px; margin-bottom:14px;">
+    <h3 style="color:var(--primary); margin-bottom:10px; font-size:14px; display:flex; align-items:center; gap:8px;">
+      <span>🏔️</span> 2. Standar Ketinggian Topografi & Hidrolika Elevasi
+    </h3>
+    <p style="font-size:12px; color:var(--text2); line-height:1.7; margin-bottom:8px;">
+      Data ketinggian (mdpl) diperoleh melalui integrasi <strong>Digital Elevation Model (DEM) resolusi 30 meter</strong> (berstandar satelit global SRTM) yang dikombinasikan dengan sensor ketinggian GNSS perangkat.
+    </p>
+    <div style="background:#F0FDF4; border:1px solid #86EFAC; padding:10px 12px; border-radius:8px; margin-bottom:8px;">
+      <div style="font-size:11.5px; font-weight:700; color:#166534; margin-bottom:4px;">Kesesuaian Hukum Fisika Hidrolika:</div>
+      <div style="font-size:11px; color:#14532D; line-height:1.6;">
+        Dalam distribusi air pipa tertutup, perbedaan elevasi (&Delta;h) secara alami menentukan <strong>Tekanan Statis Air</strong>:
+        <div style="font-weight:800; font-size:12px; margin:4px 0; color:#0F766E;">&Delta;P = &rho; &times; g &times; &Delta;h &nbsp;&nbsp;(&asymp; 10 meter beda tinggi = &plusmn; 1 Bar)</div>
+        Data elevasi ini membuktikan secara ilmiah mengapa tekanan air di titik terendah (lembah/sungai) lebih tinggi dibandingkan titik tertinggi (bukit).
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. PEMISAHAN BIDANG ANALISIS -->
+  <div class="job-item" style="padding:16px; margin-bottom:14px;">
+    <h3 style="color:var(--primary); margin-bottom:10px; font-size:14px; display:flex; align-items:center; gap:8px;">
+      <span>⚖️</span> 3. Pemisahan Mandiri Dua Bidang Analisis
+    </h3>
+    <p style="font-size:12px; color:var(--text2); line-height:1.7; margin-bottom:8px;">
+      Aplikasi memisahkan perhitungan ke dalam dua domain independen agar tidak saling tumpang tindih:
+    </p>
+    <div style="display:grid; grid-template-columns:1fr; gap:10px;">
+      <div style="background:#EFF6FF; border:1px solid #93C5FD; padding:10px 12px; border-radius:8px;">
+        <div style="font-weight:800; font-size:11.5px; color:#1E3A8A; margin-bottom:4px;">📏 Bidang 1: Analisis Jarak Distribusi (Titik 1, 2, 3)</div>
+        <div style="font-size:11px; color:#1E40AF; line-height:1.6;">
+          Hanya mengukur bentang horizontal dari Titik Terdekat &rarr; Menengah &rarr; Terjauh untuk membuktikan jangkauan layanan pipa dan kehilangan tekanan akibat gesekan panjang pipa (<em>Head Loss</em>).
+        </div>
+      </div>
+      <div style="background:#F0FDF4; border:1px solid #86EFAC; padding:10px 12px; border-radius:8px;">
+        <div style="font-weight:800; font-size:11.5px; color:#166534; margin-bottom:4px;">🏔️ Bidang 2: Analisis Elevasi Vertikal (Titik 4 & 5)</div>
+        <div style="font-size:11px; color:#14532D; line-height:1.6;">
+          Hanya mengukur titik ekstrem kontur (Titik Terendah vs Titik Tertinggi) untuk membuktikan variasi elevasi topografi dan pengaruhnya terhadap tekanan statis jaringan.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. KEABSAHAN BUKTI DIGITAL -->
+  <div class="job-item" style="padding:16px; margin-bottom:14px;">
+    <h3 style="color:var(--primary); margin-bottom:10px; font-size:14px; display:flex; align-items:center; gap:8px;">
+      <span>🔒</span> 4. Rantai Keabsahan Bukti Digital (Anti-Tampering)
+    </h3>
+    <ul style="padding-left:18px; font-size:12px; color:var(--text2); line-height:1.8;">
+      <li><strong>Watermark Piksel Permanen:</strong> Tanggal, jam (WITA), koordinat GPS, dan nama wilayah disatukan langsung ke dalam piksel foto saat kamera ditekan di lapangan.</li>
+      <li><strong>Peta Satelit Validatif:</strong> Citra satelit Google Hybrid resolusi tinggi menampilkan titik uji secara akurat di atas jalur fisik (jalan, jembatan, kontur tanah).</li>
+      <li><strong>Akuntabilitas Petugas:</strong> Nama petugas terkunci otomatis sesuai sesi akun terverifikasi saat login.</li>
+      <li><strong>Kronologi 3 Tahap:</strong> Pada pekerjaan fisik (Sebelum, Proses, Sesudah), kronologi foto membuktikan tahapan kerja secara utuh dari awal hingga tuntas.</li>
+    </ul>
+  </div>
+
+  <!-- 5. KESIAPAN PEMERIKSAAN -->
+  <div class="job-item" style="padding:16px; margin-bottom:14px; background:#F8FAFC; border:1.5px solid #CBD5E1;">
+    <h3 style="color:#003F6B; margin-bottom:8px; font-size:14px; display:flex; align-items:center; gap:8px;">
+      <span>📋</span> 5. Ringkasan Kesiapan untuk Tim Pemeriksa
+    </h3>
+    <p style="font-size:12px; color:var(--text2); line-height:1.7; margin-bottom:0;">
+      Apabila sewaktu-waktu dilakukan <strong>Pemeriksaan</strong> terhadap hasil cetak laporan PDF, seluruh bukti visual, spasial, dan catatan waktu yang disajikan dapat diverifikasi silang (<em>Cross-Verification</em>) secara akurat dan tidak dapat dimanipulasi secara manual.
+    </p>
+  </div>
+
+  <div style="text-align:center; margin-top:20px;">
+    <a href="../index.html" class="btn-primary" style="display:inline-flex; text-decoration:none; padding:12px 26px;">← Kembali ke Beranda</a>
+  </div>
+
+</div>
+
+<!-- Footer Navigasi -->
+<div style="text-align:center; padding:20px 16px; font-size:11px; color:var(--text3);">
+  <div style="margin-bottom:6px;">
+    <a href="panduan.html" style="color:var(--primary); text-decoration:none; margin:0 8px;">Panduan</a>
+    <a href="pertanggungjawaban.html" style="color:var(--primary); text-decoration:none; margin:0 8px; font-weight:700;">Standar Pemeriksaan</a>
+    <a href="privacy.html" style="color:var(--primary); text-decoration:none; margin:0 8px;">Privasi</a>
+  </div>
+  DIS-NRW · Sistem Dokumentasi Terpadu & Terverifikasi
+</div>
+
+</body>
+</html>

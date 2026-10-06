@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Buka Tutup Valve - DIS-NRW</title>
+  <meta name="theme-color" content="#005F8E">
+  <link rel="manifest" href="../assets/manifest.json">
+  <link rel="stylesheet" href="../css/main.css">
+  <script src="../js/auth-guard.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+  <script src="../js/image-compressor.js"></script>
+  <script src="../js/jarvis.js"></script>
+  <script src="../js/core.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner" style="display:flex; align-items:center; justify-content:space-around; width:100%;">
+    <a href="../index.html"><span class="nav-icon">🏠</span> Beranda</a>
+    <a href="form-valve.html" class="active"><span class="nav-icon">🔩</span> Valve</a>
+    <a href="tampildata.html"><span class="nav-icon">📂</span> Riwayat</a>
+    <a href="javascript:void(0)" onclick="logoutUser()" title="Keluar Akun"><span class="nav-icon">🚪</span> Keluar</a>
+  </div>
+</nav>
+
+<div class="app-header" style="padding:18px 20px 16px;">
+  <div class="header-title" style="font-size:18px;">🔩 Buka Tutup Valve</div>
+  <div class="header-sub">Dokumentasi bebas (jumlah foto tidak dibatasi)</div>
+</div>
+
+<div id="edit-banner">⚠️ MODE EDIT — Perubahan akan menimpa data lama.
+  <button onclick="cancelEdit()" style="margin-top:6px;padding:5px 12px;cursor:pointer;border-radius:6px;border:none;background:rgba(255,255,255,0.25);color:white;font-weight:bold;">Batal Edit</button>
+</div>
+
+<div class="container">
+  <div id="job-container"></div>
+  <div class="actions">
+    <button class="btn-secondary" onclick="addNewJobItem()">＋ Tambah Entri Valve</button>
+    <button class="btn-primary" onclick="saveToHistory()">💾 Simpan ke Riwayat</button>
+  </div>
+</div>
+
+<!-- MAP MODAL -->
+<div id="map-modal" onclick="if(event.target===this) closeMap()">
+  <div class="map-modal-inner">
+    <div class="map-modal-header">
+      <div>
+        <div class="map-modal-title">📍 Tentukan Lokasi Manual</div>
+        <div class="map-modal-sub">Geser pin atau klik peta untuk menandai titik presisi</div>
+      </div>
+      <button type="button" class="btn-map-close" onclick="closeMap()" title="Tutup Peta">✖</button>
+    </div>
+    <div class="map-body-wrapper">
+      <div id="map-container"></div>
+      <div class="map-controls">
+        <button type="button" class="btn-locate" onclick="mapLocateMe()" title="Pusatkan ke Posisi GPS Saya">🎯</button>
+      </div>
+    </div>
+    <div class="map-footer">
+      <div class="map-status-box">
+        <span class="map-status" id="map-status">Klik peta untuk menandai lokasi</span>
+      </div>
+      <div class="map-footer-btns">
+        <button type="button" class="btn-map-cancel" onclick="closeMap()">Batal</button>
+        <button type="button" class="btn-map-confirm" onclick="confirmMapLocation()">✅ Pilih Lokasi</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CAMERA MODAL -->
+<div id="cam-modal">
+  <video id="cam-video" autoplay playsinline muted></video>
+  <div id="cam-overlay" style="display:none;">
+    <div class="wm-flex">
+      <div class="wm-time" id="wm-time"></div>
+      <div class="wm-line"></div>
+      <div class="wm-date-col">
+        <div class="wm-date" id="wm-date"></div>
+        <div class="wm-day" id="wm-day"></div>
+      </div>
+    </div>
+    <div class="wm-info" id="wm-gps"></div>
+    <div class="wm-info" id="wm-addr"></div>
+  </div>
+  <div class="cam-controls">
+    <button class="btn-cam-cancel" onclick="closeCamera()">✖ Batal</button>
+    <button class="btn-shutter" onclick="capturePhoto()"></button>
+    <button class="btn-cam-flip" onclick="flipCamera()">🔄</button>
+  </div>
+</div>
+
+<button id="btn-mute-toggle" onclick="Jarvis.toggleMute()">🔇 Matikan Suara</button>
+
+<script>
+let itemCount = 0;
+let editContextId = null;
+
+function addNewJobItem() {
+  itemCount++;
+  const currentItem = itemCount;
+  const container = document.getElementById('job-container');
+  const today = getTodayISODate();
+
+  const html = `
+    <div class="job-item" id="item-${currentItem}" data-photo-count="0">
+      <div class="job-item-header">
+        <span>🔩 Entri #${currentItem} — Buka Tutup Valve</span>
+        <button class="btn-hapus-item" onclick="this.closest('.job-item').remove(); saveDraft();">Hapus</button>
+      </div>
+
+      <input type="hidden" id="date-${currentItem}" value="${today}">
+      <input type="hidden" id="gps-${currentItem}">
+      <div id="addr-${currentItem}" style="display:none;"></div>
+
+      <input type="hidden" id="officer-${currentItem}" value="">
+      <div class="input-group">
+        <label class="input-label">👤 Petugas Bertugas</label>
+        <div style="padding:10px 14px; background:var(--surface2); border:1.5px solid var(--border); border-radius:10px; font-size:13px; font-weight:600; color:var(--primary); display:flex; align-items:center; gap:8px;">
+          <span style="font-size:18px;">👤</span>
+          <span id="officer-display-${currentItem}">Memuat nama...</span>
+        </div>
+      </div>
+
+      <div class="valve-photos-wrapper">
+        <label class="input-label">📸 Daftar Foto Bukti Valve (Bebas / Tidak Dibatasi)</label>
+        <div id="valve-photo-list-${currentItem}"></div>
+        <button type="button" class="btn-add-foto" onclick="addValvePhotoSlot(${currentItem})">
+          <span>＋</span> Tambah Foto Valve
+        </button>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">📝 Keterangan / Kronologi Buka Tutup Valve</label>
+        <textarea class="form-input form-textarea" id="ta-${currentItem}" placeholder="Contoh: 1. Menutup valve untuk pengisian air ke booster Pongtiku... 2. Valve ke jalur Balele ditutup, membuka valve distribusi dari Salu Silaga..." oninput="saveDraft()"></textarea>
+      </div>
+
+    </div>`;
+  container.insertAdjacentHTML('beforeend', html);
+  // Auto-isi nama petugas dari sesi login
+  const dispEl = document.getElementById(`officer-display-${currentItem}`);
+  const hidEl = document.getElementById(`officer-${currentItem}`);
+  const loggedName = getLoggedInName();
+  if (dispEl) dispEl.textContent = loggedName;
+  if (hidEl && !hidEl.value) hidEl.value = loggedName;
+  
+  // Default tambahkan 2 foto awal (Buka & Tutup)
+  addValvePhotoSlot(currentItem, 'Foto 1 (Posisi Awal / Tutup)');
+  addValvePhotoSlot(currentItem, 'Foto 2 (Posisi Akhir / Buka)');
+  
+  Jarvis.pandu('foto_valve');
+}
+
+function addValvePhotoSlot(itemId, customLabel) {
+  const itemEl = document.getElementById(`item-${itemId}`);
+  if (!itemEl) return;
+  let count = parseInt(itemEl.getAttribute('data-photo-count') || '0') + 1;
+  itemEl.setAttribute('data-photo-count', count);
+
+  const label = customLabel || `Foto ${count}`;
+  const list = document.getElementById(`valve-photo-list-${itemId}`);
+  const slotId = `vp-${itemId}-${count}`;
+
+  const slotHtml = `
+    <div class="valve-photo-card" id="slot-wrap-${slotId}">
+      <div class="valve-photo-header">
+        <span>${label}</span>
+        <button class="btn-hapus-foto" onclick="document.getElementById('slot-wrap-${slotId}').remove(); saveDraft();">✕ Hapus</button>
+      </div>
+      <div style="padding:10px; display:flex; gap:10px; align-items:center;">
+        <div class="photo-preview" id="${slotId}" style="width:90px; height:75px; flex-shrink:0;">
+          <span class="empty-icon" style="font-size:20px;">📷</span>
+        </div>
+        <div style="flex:1;">
+          <div class="photo-actions" style="margin-bottom:6px;">
+            <button class="btn-photo" onclick="openCamera('${slotId}','gps-${itemId}','addr-${itemId}',saveDraft)" style="font-size:12px; padding:6px;">📷 Kamera</button>
+            <button class="btn-photo" onclick="document.getElementById('gal-${slotId}').click()" style="font-size:12px; padding:6px;">📁 Galeri</button>
+          </div>
+          <input type="file" id="gal-${slotId}" accept="image/*" style="display:none" onchange="processGalleryFile(this.files[0],'${slotId}','gps-${itemId}','addr-${itemId}',saveDraft)">
+          <input type="text" class="form-input" id="lbl-${slotId}" value="${label}" placeholder="Label/Keterangan foto..." oninput="saveDraft()" style="font-size:11px; padding:6px;">
+        </div>
+      </div>
+    </div>
+  `;
+  list.insertAdjacentHTML('beforeend', slotHtml);
+}
+
+function onDateChange(id) {
+  const val = document.getElementById(`date-${id}`).value;
+  document.getElementById(`date-lbl-${id}`).textContent = formatIndoDate(val);
+  saveDraft();
+  Jarvis.pandu('lokasi');
+}
+
+function onLocationConfirmed() { Jarvis.pandu('foto_valve'); }
+
+async function saveDraft() {
+  const items = [];
+  document.querySelectorAll('.job-item').forEach(item => {
+    const id = item.id.split('-')[1];
+    const dateVal = document.getElementById(`date-${id}`)?.value || getTodayISODate();
+    const photos = [];
+    item.querySelectorAll('.valve-photo-card').forEach(card => {
+      const preview = card.querySelector('.photo-preview');
+      const img = preview?.querySelector('img')?.src || null;
+      const lbl = card.querySelector('input[type="text"]')?.value || 'Foto Valve';
+      if (img || lbl) {
+        photos.push({
+          img: img,
+          lbl: lbl,
+          gps: preview?.dataset.gps || '',
+          addr: preview?.dataset.addr || '',
+          lat: preview?.dataset.lat ? parseFloat(preview.dataset.lat) : null,
+          lng: preview?.dataset.lng ? parseFloat(preview.dataset.lng) : null,
+          elevation: preview?.dataset.elevation ? parseFloat(preview.dataset.elevation) : null,
+          mapsUrl: preview?.dataset.mapsUrl || ''
+        });
+      }
+    });
+
+    // Auto-isi nama dari sesi login jika belum ada
+    const officerEl = document.getElementById(`officer-${id}`);
+    if (officerEl && !officerEl.value) officerEl.value = getLoggedInName();
+    items.push({
+      type: 'valve',
+      workDate: dateVal,
+      officer: officerEl?.value || getLoggedInName(),
+      gps: document.getElementById(`gps-${id}`)?.value || '',
+      addr: document.getElementById(`addr-${id}`)?.innerText || '',
+      photos: photos,
+      desc: document.getElementById(`ta-${id}`)?.value || ''
+    });
+  });
+  await localforage.setItem(SAPDI_KEYS.DRAFT, items);
+  return items;
+}
+
+async function loadDraft() {
+  editContextId = await localforage.getItem(SAPDI_KEYS.EDIT_ID);
+  if (editContextId) document.getElementById('edit-banner').style.display = 'block';
+  const saved = await localforage.getItem(SAPDI_KEYS.DRAFT);
+  if (!saved || !saved.length || saved[0].type !== 'valve') { addNewJobItem(); return; }
+  saved.forEach((data, idx) => {
+    itemCount++;
+    const currentItem = itemCount;
+    const container = document.getElementById('job-container');
+
+    const html = `
+      <div class="job-item" id="item-${currentItem}" data-photo-count="0">
+        <div class="job-item-header">
+          <span>🔩 Entri #${currentItem} — Buka Tutup Valve</span>
+          <button class="btn-hapus-item" onclick="this.closest('.job-item').remove(); saveDraft();">Hapus</button>
+        </div>
+
+        <input type="hidden" id="date-${currentItem}" value="${data.workDate || getTodayISODate()}">
+        <input type="hidden" id="gps-${currentItem}" value="${data.gps || ''}">
+        <div id="addr-${currentItem}" style="display:none;">${data.addr || ''}</div>
+
+        <input type="hidden" id="officer-${currentItem}" value="${data.officer || ''}">        
+        <div class="input-group">
+          <label class="input-label">👤 Petugas Bertugas</label>
+          <div style="padding:10px 14px; background:var(--surface2); border:1.5px solid var(--border); border-radius:10px; font-size:13px; font-weight:600; color:var(--primary); display:flex; align-items:center; gap:8px;">
+            <span style="font-size:18px;">👤</span>
+            <span id="officer-display-${currentItem}">${data.officer || getLoggedInName()}</span>
+          </div>
+        </div>
+
+        <div class="valve-photos-wrapper">
+          <label class="input-label">📸 Daftar Foto Bukti Valve (Bebas / Tidak Dibatasi)</label>
+          <div id="valve-photo-list-${currentItem}"></div>
+          <button type="button" class="btn-add-foto" onclick="addValvePhotoSlot(${currentItem})">
+            <span>＋</span> Tambah Foto Valve
+          </button>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">📝 Keterangan / Kronologi Buka Tutup Valve</label>
+          <textarea class="form-input form-textarea" id="ta-${currentItem}" oninput="saveDraft()">${data.desc || ''}</textarea>
+        </div>
+
+      </div>`;
+    container.insertAdjacentHTML('beforeend', html);
+
+    if (data.photos && data.photos.length) {
+      data.photos.forEach(p => {
+        addValvePhotoSlot(currentItem, p.lbl);
+        const itemEl = document.getElementById(`item-${currentItem}`);
+        const lastCard = itemEl.querySelectorAll('.valve-photo-card');
+        const latest = lastCard[lastCard.length - 1];
+        if (p.img && latest) {
+          const preview = latest.querySelector('.photo-preview');
+          if (preview) {
+            preview.innerHTML = `<img src="${p.img}">`;
+            preview.classList.add('has-photo');
+            if (p.gps) preview.dataset.gps = p.gps;
+            if (p.addr) preview.dataset.addr = p.addr;
+            if (p.lat) preview.dataset.lat = p.lat;
+            if (p.lng) preview.dataset.lng = p.lng;
+            if (p.elevation !== null && p.elevation !== undefined) preview.dataset.elevation = p.elevation;
+            if (p.mapsUrl) preview.dataset.mapsUrl = p.mapsUrl;
+          }
+        }
+      });
+    } else {
+      addValvePhotoSlot(currentItem, 'Foto 1 (Tutup/Buka)');
+    }
+  });
+}
+
+async function saveToHistory() {
+  const items = await saveDraft();
+  if (!items || !items.length) { showToast('⚠️ Tambahkan data pekerjaan terlebih dahulu!', 3000); return; }
+  let history = await localforage.getItem(SAPDI_KEYS.HISTORY) || [];
+  if (!Array.isArray(history)) history = [];
+  if (editContextId) history = history.filter(h => h.id !== parseFloat(editContextId));
+  const workDate = items[0].workDate || getTodayISODate();
+  history.push({ id: Date.now(), type: 'valve', typeLabel: 'Buka Tutup Valve', date: workDate, timestamp: formatIndoDate(workDate), data: items });
+  await localforage.setItem(SAPDI_KEYS.HISTORY, history);
+  await localforage.removeItem(SAPDI_KEYS.DRAFT);
+  await localforage.removeItem(SAPDI_KEYS.EDIT_ID);
+  Jarvis.pandu('selesai');
+  showToast('✅ Laporan valve berhasil disimpan!');
+  setTimeout(() => location.href = 'tampildata.html', 1200);
+}
+
+async function cancelEdit() {
+  await localforage.removeItem(SAPDI_KEYS.DRAFT);
+  await localforage.removeItem(SAPDI_KEYS.EDIT_ID);
+  location.reload();
+}
+
+window.onload = () => loadDraft();
+</script>
+</body>
+</html>

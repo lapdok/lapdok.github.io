@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <link rel="icon" type="image/png" href="assets/icons/icon-512.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dashboard - Tim Distribusi</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#5d87ff">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2642522351768171"
+     crossorigin="anonymous"></script>
+    <style>
+        :root {
+            --primary: #5d87ff;
+            --secondary: #4974f3;
+            --accent: #00d2ff;
+            --bg: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.85);
+            --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            margin: 0; 
+            background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%); 
+            color: #1e293b; 
+            min-height: 100vh;
+            padding-bottom: 50px; /* Slimmer footer */
+        }
+
+        .navbar { 
+            display: flex; 
+            justify-content: space-around; 
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 14px 0; 
+            position: sticky; 
+            top: 0; 
+            z-index: 999; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .navbar a { 
+            color: #64748b; 
+            text-decoration: none; 
+            font-weight: 600; 
+            font-size: 14px; 
+            transition: all 0.3s ease;
+            padding: 8px 16px;
+            border-radius: 12px;
+        }
+
+        .navbar a.active { 
+            color: var(--primary); 
+            background: rgba(93, 135, 255, 0.1);
+        }
+
+        .container { 
+            width: 100%; 
+            max-width: 800px; 
+            margin: auto; 
+            padding: 20px; 
+        }
+
+        .welcome-section {
+            padding: 30px 0;
+            text-align: center;
+        }
+
+        .welcome-section h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 10px 0;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .welcome-section p {
+            color: #64748b;
+            font-size: 16px;
+            margin: 0;
+        }
+
+        .job-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .job-card {
+            background: var(--glass);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .job-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        .job-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(93, 135, 255, 0.15);
+        }
+
+        .job-card:hover::before {
+            width: 8px;
+        }
+
+        .job-card .badge {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary);
+            background: rgba(93, 135, 255, 0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            width: fit-content;
+        }
+
+        .job-card h3 {
+            margin: 4px 0 2px 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .job-card .content {
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.5;
+        }
+
+        .job-card .tasks-list {
+            margin: 8px 0;
+            padding-left: 18px;
+            font-size: 13px;
+            color: #475569;
+        }
+
+        .job-card .tasks-list li {
+            margin-bottom: 4px;
+        }
+
+        .job-card .footer {
+            margin-top: auto;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 14px;
+            padding-top: 10px;
+        }
+
+        .job-card .footer span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .job-card .footer span::after {
+            content: '→';
+            transition: transform 0.3s ease;
+        }
+
+        .job-card:hover .footer span::after {
+            transform: translateX(5px);
+        }
+
+        /* Micro-animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .job-card {
+            animation: fadeIn 0.5s ease backwards;
+        }
+
+        .job-card:nth-child(1) { animation-delay: 0.1s; }
+        .job-card:nth-child(2) { animation-delay: 0.2s; }
+        .job-card:nth-child(3) { animation-delay: 0.3s; }
+        .job-card:nth-child(4) { animation-delay: 0.4s; }
+        .job-card:nth-child(5) { animation-delay: 0.5s; }
+
+        /* Jarvis Card Styles */
+        .jarvis-card {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.1);
+            animation: fadeIn 0.5s ease;
+        }
+
+        .jarvis-icon {
+            font-size: 40px;
+            background: rgba(93, 135, 255, 0.2);
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 2px solid #5d87ff;
+            flex-shrink: 0;
+        }
+
+        .jarvis-content h2 {
+            margin: 0 0 5px 0;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .jarvis-content p {
+            margin: 0 0 15px 0;
+            font-size: 14px;
+            opacity: 0.8;
+            line-height: 1.4;
+        }
+
+        .btn-jarvis {
+            background: #5d87ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-jarvis:hover {
+            background: #4a6ee0;
+            transform: translateY(-2px);
+        }
+
+        .btn-jarvis.active {
+            background: #27ae60;
+        }
+
+        .btn-mute-float {
+            position: fixed;
+            bottom: 45px; /* Lower than before, above slim footer */
+            right: 20px;
+            z-index: 1001;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: none;
+            background: #5d87ff;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            font-size: 18px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .btn-mute-float.muted {
+            background: #94a3b8;
+        }
+
+        .ad-label {
+            font-size: 8px;
+            color: #94a3b8;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        .developer-info {
+            font-size: 10px;
+            color: white; /* Changed to white for better visibility on primary background */
+            text-align: center;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            padding: 8px;
+        }
+        .sticky-footer-slim {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: var(--primary);
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="index.html" class="active">🏠 Dashboard</a>
+    <a href="pages/tampildata.html">📂 Riwayat</a>
+    <a href="pages/info.html">ℹ️ Info App</a>
+</nav>
+
+<div class="container">
+    <div class="welcome-section">
+        <h1>Tim Distribusi</h1>
+        <p>Pilih kategori tugas untuk mulai mendokumentasikan pekerjaan Anda hari ini.</p>
+    </div>
+
+    <!-- Header Ad -->
+    <div style="margin-bottom: 25px; min-height: 90px; display: flex; flex-direction: column; align-items: center;">
+        <span class="ad-label">Advertisement</span>
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-2642522351768171"
+             data-ad-slot="7918954512"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>
+             (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+    </div>
+
+    <div class="jarvis-card" id="jarvis-box">
+        <div class="jarvis-icon">🎙️</div>
+        <div class="jarvis-content">
+            <h2 id="jarvis-status">Jarvis Menunggu</h2>
+            <p id="jarvis-desc">Aktifkan asisten suara untuk memandu pengisian laporan Anda.</p>
+            <button class="btn-jarvis" id="btn-activate-jarvis" onclick="activateJarvis()">
+                🚀 Aktifkan Asisten
+            </button>
+        </div>
+    </div>
+
+    <div class="job-grid">
+        <!-- Job 1 -->
+        <div class="job-card" onclick="location.href='pages/lapor.html?id=0'">
+            <div class="badge">Tupoksi</div>
+            <h3>Tugas Lain-lain Perusahaan</h3>
+            <div class="content">Tugas Lain-lain Perusahaan adalah tugas tambahan yang harus dikerjakan diluar Tugas Pokok & Fungsi untuk mendukung produktivitas dan citra perusahaan :</div>
+            <ol class="tasks-list">
+                <li>Mengangkat peralatan mesin seperti pompa, peralatan kelistrikan, dan generator set (pegawai Laki-laki);</li>
+                <li>Membendung sungai di musim kemarau (pegawai Laki-laki);</li>
+                <li>Penggantian Meter Air pelanggan yang tidak normal secara massal (pegawai Laki-laki);</li>
+                <li>Pemasangan SR baru secara massal apabila sedang banyak permintaan (pegawai Laki-laki);</li>
+                <li>Rehabilitasi IPA, Intake dan Jaringan Perpipaan yang terkena longsor atau pekerjaan urgensi lainnya;</li>
+                <li>Pekerjaan konstruksi, bangunan, dll (pegawai Laki-laki);</li>
+                <li>Hal-hal teknis kegiatan/pekerjaan Perusahaan atau Pemda (pegawai Laki-laki);</li>
+                <li>Penagihan untuk menekan piutang (pegawai perempuan);</li>
+                <li>Pencarian Pendaftaran SR baru untuk pemenuhan target perusahaan atas pertumbuhan pelanggan dan perluasan cakupan pelayanan (pegawai Perempuan);</li>
+                <li>Acara pameran (semua Pegawai);</li>
+                <li>Pengawasan sambungan ilegal/pencurian air (semua pegawai);</li>
+                <li>Mewakili perusahaan pada acara seni, budaya, dan olahraga (semua pegawai);</li>
+                <li>Mewakili perusahaan pada acara keagamaan (semua pegawai);</li>
+                <li>Penugasan menyetir kendaraan untuk mengganti sopir direktur, mobil tangki, dll yang sedang cuti/sakit/resign;</li>
+                <li>Penugasan tugas lainnya berkaitan dengan operasional perusahaan.</li>
+            </ol>
+            <div class="footer">
+                <span>Pilih Tugas</span>
+            </div>
+        </div>
+
+        <!-- Job 2 -->
+        <div class="job-card" onclick="location.href='pages/lapor.html?id=1'">
+            <div class="badge">Tupoksi</div>
+            <h3>Penanganan Aduan Pelanggan melalui SIMPEL & Website sesuai SOP</h3>
+            <ol class="tasks-list">
+                <li>Melaksanakan penanganan aduan berdasarkan data dari SIMPEL;</li>
+                <li>Proaktif memberi saran/solusi kepada pelanggan untuk bekerjasama melaksanakan saran agar masalah/kendala yang dikeluhkan terselesaikan secara permanen;</li>
+                <li>Dapat menugaskan diri sendiri atas aduan yang langsung diterima dengan menginput melalui menu pengaduan di website perusahaan;</li>
+            </ol>
+            <div class="content">Tupoksi diatas tidak perlu membuat laporan karena otomatis masuk ke sistem e-kinerja.</div>
+            <div class="footer">
+                <span>Pilih Tugas</span>
+            </div>
+        </div>
+
+        <!-- Job 3 -->
+        <div class="job-card" onclick="location.href='pages/lapor.html?id=2'">
+            <div class="badge">Tupoksi</div>
+            <h3>Melaksanakan Tupoksi sesuai dengan SOP</h3>
+            <ol class="tasks-list">
+                <li>Membuat dan mengatur dan distribusi air keseluruh wilayah pelayanan yang telah ditetapkan;</li>
+                <li>Melaksanakan distribusi air ke pelanggan secara merata dan kontinu sesuai jadwal yang telah ditentukan;</li>
+                <li>Mengatur dan menyelenggarakan fungsi-fungsi valve (buka-tutup), air valve (pembuangan tekanan udara dalam pip) dan wash out (pengurasan) pada jaringan pipa transmisi dan distribusi;</li>
+                <li>Melaksanakan perbaikan kebocoran pipa distribusi, jaringan sambungan rumah, dan instalasi meteran;</li>
+            </ol>
+            <div class="content">Tupoksi nomor 1-4 diatas dilaporkan melalui sistem e-kinerja untuk rekapan penilaian.</div>
+            <div class="footer">
+                <span>Pilih Tugas</span>
+            </div>
+        </div>
+
+        <!-- Job 4 -->
+        <div class="job-card" onclick="location.href='pages/lapor.html?id=3'">
+            <div class="badge">Tupoksi</div>
+            <h3>Melaksanakan koordinasi dengan Sub Bidang Produksi & Sub Bidang Pengaduan</h3>
+            <ol class="tasks-list">
+                <li>Melaksanakan koordinasi dengan Sub Bidang Produksi untuk kelancaran suplai air dan pelayanan;</li>
+                <li>Menindaklanjuti aduan pelanggan dari Bidang Hubungan Langganan melalui SIMPEL;</li>
+            </ol>
+            <div class="footer">
+                <span>Pilih Tugas</span>
+            </div>
+        </div>
+
+        <!-- Job 5 -->
+        <div class="job-card" onclick="location.href='pages/lapor.html?id=4'">
+            <div class="badge">Tupoksi</div>
+            <h3>Melaksanakan tugas lain dari atasan</h3>
+            <ol class="tasks-list">
+                <li>Membantu pengangkatan Pompa Air baku, Pompa Transfer/Distribusi, Pompa Booster, Pompa Dosing;</li>
+                <li>Membantu mengangkat material teknik atau permesinan yang berat;</li>
+                <li>Membantu tim produksi pembersihan sumbatan intake/sumur;</li>
+                <li>Membantu pada material berat kelistrikan;</li>
+                <li>Membantu penanganan pekerjaan darurat atau pekerjaan yang membutuhkan kecepatan;</li>
+                <li>Membantu membendung sungai di musim kemarau;</li>
+                <li>Membantu pekerjaan keahlian seperti pengelasan dan pengoperasian mesin;</li>
+                <li>Tugas perusahaan lainnya yang membutuhkan banyak tenaga.</li>
+            </ol>
+            <div class="footer">
+                <span>Pilih Tugas</span>
+            </div>
+    </div>
+
+    <!-- Inline Footer Ad (End of Jobs) -->
+    <div style="margin-top: 30px; margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; border-top: 1px dashed #ced4da; padding-top: 20px;">
+        <span class="ad-label">Advertisement</span>
+        <ins class="adsbygoogle"
+             style="display:inline-block;width:320px;height:50px"
+             data-ad-client="ca-pub-2642522351768171"
+             data-ad-slot="7918954512"></ins>
+        <script>
+             (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+    </div>
+</div>
+
+<button id="jarvis-mute-toggle" class="btn-mute-float" onclick="toggleJarvisMute()">🔊</button>
+
+<script src="assets/js/jarvis.js"></script>
+<script>
+
+    function toggleJarvisMute() {
+        const isMuted = Jarvis.toggleMute();
+        const btn = document.getElementById('jarvis-mute-toggle');
+        btn.innerText = isMuted ? "🔇" : "🔊";
+        btn.classList.toggle('muted', isMuted);
+    }
+
+    function initMuteButtonState() {
+        const btn = document.getElementById('jarvis-mute-toggle');
+        if (btn) {
+            btn.innerText = Jarvis.muted ? "🔇" : "🔊";
+            btn.classList.toggle('muted', Jarvis.muted);
+        }
+    }
+
+    window.onload = () => {
+        initMuteButtonState();
+    };
+
+    function activateJarvis() {
+        if (!Jarvis.activated) {
+            Jarvis.activate();
+            Jarvis.say("Halo! Pilih kategori tugas Anda.");
+            
+            const status = document.getElementById('jarvis-status');
+            const desc = document.getElementById('jarvis-desc');
+            const btn = document.getElementById('btn-activate-jarvis');
+            
+            status.innerText = "Jarvis Aktif";
+            desc.innerText = "Sistem suara telah diaktifkan. Saya akan memandu Anda di setiap langkah pengisian laporan.";
+            btn.innerText = "✅ Asisten Siap";
+            btn.classList.add('active');
+            
+            // Simpan status aktivasi agar Jarvis tahu di halaman berikutnya
+            sessionStorage.setItem('jarvis_activated', 'true');
+        }
+    }
+
+    // Registrasi Service Worker PWA
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('SW Registered', reg))
+                .catch(err => console.log('SW Registration failed', err));
+        });
+    }
+</script>
+</script>
+
+<!-- Sticky Developer Info Footer -->
+<div class="sticky-footer-slim">
+    <div class="developer-info">
+        Developed by Stark Industries
+    </div>
+</div>
+</body>
+</html>

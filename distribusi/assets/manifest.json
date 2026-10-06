@@ -1,0 +1,54 @@
+{
+  "id": "dis-nrw-pdam-app",
+  "name": "DIS-NRW - Distribusi Air & Pengendalian NRW",
+  "short_name": "DIS-NRW",
+  "description": "Aplikasi Dokumentasi Kinerja Lapangan Distribusi Air & Pengendalian NRW PDAM",
+  "start_url": "../index.html",
+  "scope": "../",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "background_color": "#F4F8FF",
+  "theme_color": "#005F8E",
+  "orientation": "any",
+  "categories": ["utilities", "productivity", "business"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Riwayat Laporan",
+      "short_name": "Riwayat",
+      "url": "../pages/tampildata.html",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Uji Tekanan SR",
+      "short_name": "Uji Tekanan",
+      "url": "../pages/form-uji-tekanan.html",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Perbaikan Pipa",
+      "short_name": "Perbaikan",
+      "url": "../pages/form-perbaikan.html",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

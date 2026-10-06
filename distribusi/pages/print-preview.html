@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pratinjau Cetak PDF - DIS-NRW</title>
+  <link rel="stylesheet" href="../css/print-pdf.css">
+  <script src="../js/auth-guard.js"></script>
+  <!-- Leaflet JS & CSS for Satellite Map Preview -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="../js/core.js"></script>
+</head>
+<body>
+
+<div class="preview-toolbar" id="toolbar">
+  <div class="toolbar-title">📄 Pratinjau Dokumen Cetak — DIS-NRW</div>
+  <div style="display:flex; gap:10px;">
+    <button class="btn-toolbar btn-back-toolbar" onclick="window.history.back()">⬅️ Kembali</button>
+    <button class="btn-toolbar btn-download-toolbar" onclick="downloadPDF()">💾 Download PDF Sekarang</button>
+  </div>
+</div>
+
+<div id="print-content-target" style="padding-top:65px;">
+  <div style="text-align:center; color:white; padding:60px;">Memuat dokumen...</div>
+</div>
+
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const reportId = parseFloat(urlParams.get('id'));
+let mapInitJobs = [];
+
+function parseCoords(gpsStr) {
+  if (!gpsStr) return null;
+  let str = gpsStr;
+  if (typeof str === 'object' && str !== null) {
+    if (str.lat && str.lng) return { lat: parseFloat(str.lat), lng: parseFloat(str.lng) };
+    if (str.gps) str = str.gps;
+  }
+  if (typeof str !== 'string') return null;
+  if (str.includes('query=')) {
+    str = str.split('query=')[1];
+  }
+  const parts = str.split(',');
+  if (parts.length >= 2) {
+    const lat = parseFloat(parts[0]);
+    const lng = parseFloat(parts[1]);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      return { lat, lng };
+    }
+  }
+  return null;
+}
+
+/**
+ * extractItemLocations — baca semua titik foto termasuk elevation (mdpl)
+ */
+function extractItemLocations(item, type) {
+  const locs = [];
+
+  if (type === 'valve' && Array.isArray(item.photos)) {
+    item.photos.forEach((p, idx) => {
+      let coords = null;
+      let addr = '';
+      let elev = null;
+      if (typeof p === 'object' && p !== null) {
+        coords = parseCoords(p.gps || (p.lat && p.lng ? `${p.lat},${p.lng}` : null));
+        if (p.addr) addr = p.addr;
+        if (p.elevation !== undefined && p.elevation !== null) elev = parseFloat(p.elevation);
+      }
+      if (!coords && idx === 0 && item.gps) coords = parseCoords(item.gps);
+      if (!addr && item.addr) addr = item.addr;
+
+      if (coords) {
+        locs.push({
+          label: (p && p.lbl) ? p.lbl : `Foto Valve ${idx + 1}`,
+          lat: coords.lat,
+          lng: coords.lng,
+          addr: addr,
+          elevation: elev,
+          mapsUrl: `https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`
+        });
+      }
+    });
+  } else {
+    const slotKeys = ['p1', 'p2', 'p3', 'p4', 'p5'];
+    const slotLabels = {
+      apel: ['Foto Apel'],
+      uji_tekanan: ['1. Titik Terdekat', '2. Titik Menengah', '3. Titik Terjauh', '4. Titik Terendah', '5. Titik Tertinggi'],
+      perbaikan: ['1. Sebelum', '2. Proses', '3. Sesudah'],
+      tugaslain: ['1. Sebelum', '2. Proses', '3. Sesudah']
+    };
+    const labels = slotLabels[type] || ['Foto 1', 'Foto 2', 'Foto 3'];
+
+    slotKeys.forEach((key, idx) => {
+      const pData = item[key];
+      if (pData) {
+        let coords = null;
+        let addr = '';
+        let elev = null;
+        let photoLabel = labels[idx] || `Foto ${idx + 1}`;
+        let metric = null;
+
+        if (typeof pData === 'object' && pData !== null) {
+          coords = parseCoords(pData.gps || (pData.lat && pData.lng ? `${pData.lat},${pData.lng}` : null));
+          if (pData.addr) addr = pData.addr;
+          if (pData.metric) metric = pData.metric;
+          if (pData.elevation !== undefined && pData.elevation !== null) elev = parseFloat(pData.elevation);
+        } else {
+          const customGps = item[`${key}_gps`];
+          if (customGps) coords = parseCoords(customGps);
+          if (item[`${key}_addr`]) addr = item[`${key}_addr`];
+        }
+
+        // Fallback ke item.gps hanya jika ini foto pertama atau memang ada item.gps
+        if (!coords && idx === 0 && item.gps) {
+          coords = parseCoords(item.gps);
+          if (!addr) addr = item.addr || '';
+        }
+
+        if (coords) {
+          locs.push({
+            label: photoLabel,
+            lat: coords.lat,
+            lng: coords.lng,
+            addr: addr,
+            elevation: elev,
+            metric: metric,
+            slotKey: key,
+            slotIndex: idx,
+            mapsUrl: `https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`
+          });
+        }
+      }
+    });
+  }
+
+  // Fallback jika belum ada locs dari foto individu
+  if (locs.length === 0 && item.gps) {
+    const coords = parseCoords(item.gps);
+    if (coords) {
+      locs.push({
+        label: 'Lokasi Pekerjaan',
+        lat: coords.lat,
+        lng: coords.lng,
+        addr: item.addr || '',
+        elevation: null,
+        slotKey: 'p1',
+        slotIndex: 0,
+        mapsUrl: `https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`
+      });
+    }
+  }
+
+  return locs;
+}
+
+/**
+ * Format Jarak (Meter / Kilometer)
+ */
+function formatDist(m) {
+  if (m === null || isNaN(m)) return '0 m';
+  if (m < 1000) return `${Math.round(m)} m`;
+  return `${(m / 1000).toFixed(2)} km`;
+}
+
+/**
+ * Haversine distance (meter) antara dua koordinat — Standar GIS WGS-84
+ */
+function haversineM(lat1, lng1, lat2, lng2) {
+  if (lat1 === null || lng1 === null || lat2 === null || lng2 === null) return 0;
+  const R = 6371008.8; // Jari-jari bumi WGS-84 (meter)
+  const toRad = v => v * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+            Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * renderGISStatsHtml — Render ringkasan statistik terpisah (Jarak & Ketinggian Masing-Masing di Bidangnya Sendiri)
+ */
+function renderGISStatsHtml(locs, type) {
+  if (!locs || locs.length < 2) return '';
+
+  if (type === 'uji_tekanan') {
+    // =========================================================================
+    // [KHUSUS UJI TEKANAN]: Pemisahan Mutlak 2 Bidang Perhitungan
+    // Bidang 1: Analisis Jarak Distribusi (Hanya Titik 1. Terdekat, 2. Menengah, 3. Terjauh)
+    // Bidang 2: Analisis Elevasi / Tekanan Vertikal (Hanya Titik 4. Terendah & 5. Tertinggi)
+    // =========================================================================
+    const distLocs = locs.filter(l => [0, 1, 2].includes(l.slotIndex));
+    const elevLocs = locs.filter(l => [3, 4].includes(l.slotIndex));
+
+    let distBoxHtml = '';
+    if (distLocs.length >= 2) {
+      let segRows = '';
+      let totalDist = 0;
+      for (let i = 0; i < distLocs.length - 1; i++) {
+        const d = haversineM(distLocs[i].lat, distLocs[i].lng, distLocs[i+1].lat, distLocs[i+1].lng);
+        totalDist += d;
+        segRows += `
+          <div style="display:flex; justify-content:space-between; padding:1.5px 0; border-bottom:1px dotted #CBD5E1;">
+            <span style="color:#334155;">${distLocs[i].label} → ${distLocs[i+1].label}</span>
+            <strong style="color:#005F8E;">${formatDist(d)}</strong>
+          </div>
+        `;
+      }
+      distBoxHtml = `
+        <div style="margin-top:5px; padding:5px 7px; background:#EFF6FF; border:1.5px solid #93C5FD; border-radius:6px;">
+          <div style="font-size:7.2px; font-weight:900; color:#1E3A8A; margin-bottom:3px; text-transform:uppercase; letter-spacing:0.3px;">
+            📏 BIDANG 1: JARAK DISTRIBUSI (TERDEKAT – MENENGAH – TERJAUH)
+          </div>
+          <div style="font-size:7px; line-height:1.7;">${segRows}</div>
+          <div style="margin-top:3px; padding:3px 5px; background:#DBEAFE; border-radius:4px; font-size:7px; display:flex; justify-content:space-between;">
+            <span style="color:#1E40AF; font-weight:700;">▶ Rentang Jarak Total (Terdekat → Terjauh):</span>
+            <strong style="color:#1D4ED8; font-size:7.5px;">${formatDist(totalDist)}</strong>
+          </div>
+        </div>
+      `;
+    }
+
+    let elevBoxHtml = '';
+    const p4 = elevLocs.find(l => l.slotIndex === 3); // Terendah
+    const p5 = elevLocs.find(l => l.slotIndex === 4); // Tertinggi
+    if (p4 || p5) {
+      const e4 = (p4 && p4.elevation !== null && !isNaN(p4.elevation)) ? parseFloat(p4.elevation) : null;
+      const e5 = (p5 && p5.elevation !== null && !isNaN(p5.elevation)) ? parseFloat(p5.elevation) : null;
+      const horizDist = (p4 && p5) ? haversineM(p4.lat, p4.lng, p5.lat, p5.lng) : null;
+      const diff = (e4 !== null && e5 !== null) ? (e5 - e4) : null;
+
+      elevBoxHtml = `
+        <div style="margin-top:5px; padding:5px 7px; background:#F0FDF4; border:1.5px solid #86EFAC; border-radius:6px;">
+          <div style="font-size:7.2px; font-weight:900; color:#166534; margin-bottom:3px; text-transform:uppercase; letter-spacing:0.3px;">
+            🏔 BIDANG 2: KETINGGIAN ELEVASI (TERENDAH – TERTINGGI)
+          </div>
+          <div style="font-size:7px; line-height:1.7;">
+            <div style="display:flex; justify-content:space-between; border-bottom:1px dotted #BBF7D0; padding:1.5px 0;">
+              <span style="color:#334155;">4. Titik Terendah (Lembah / Sungai):</span>
+              <strong style="color:#166534;">${e4 !== null ? e4.toFixed(1) + ' mdpl' : '—'}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px dotted #BBF7D0; padding:1.5px 0;">
+              <span style="color:#334155;">5. Titik Tertinggi (Bukit / Elevasi Atas):</span>
+              <strong style="color:#166534;">${e5 !== null ? e5.toFixed(1) + ' mdpl' : '—'}</strong>
+            </div>
+          </div>
+          <div style="margin-top:3px; padding:3px 5px; background:#DCFCE7; border-radius:4px; font-size:7px; display:flex; justify-content:space-between;">
+            <span style="color:#14532D; font-weight:700;">▶ Beda Ketinggian Vertikal (Δh):</span>
+            <strong style="color:#15803D; font-size:7.5px;">${diff !== null ? (diff >= 0 ? '+' : '') + diff.toFixed(1) + ' meter' : '—'}</strong>
+          </div>
+          ${horizDist !== null ? `
+            <div style="margin-top:2px; font-size:6.8px; color:#166534; text-align:right;">
+              Jarak Bentang Titik Terendah ke Tertinggi: <strong>${formatDist(horizDist)}</strong>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    return `${distBoxHtml}${elevBoxHtml}`;
+  }
+
+  // =========================================================================
+  // [KASUS PEKERJAAN STANDAR]: Perbaikan Kebocoran / Tugas Lain / Valve / Apel
+  // =========================================================================
+  let segRows = '';
+  let totalDist = 0;
+  for (let i = 0; i < locs.length - 1; i++) {
+    const d = haversineM(locs[i].lat, locs[i].lng, locs[i+1].lat, locs[i+1].lng);
+    totalDist += d;
+    segRows += `
+      <div style="display:flex; justify-content:space-between; padding:1.5px 0; border-bottom:1px dotted #CBD5E1;">
+        <span style="color:#334155;">${locs[i].label} → ${locs[i+1].label}</span>
+        <strong style="color:#005F8E;">${formatDist(d)}</strong>
+      </div>
+    `;
+  }
+
+  const elevs = locs.map(l => (l.elevation !== null && l.elevation !== undefined && !isNaN(parseFloat(l.elevation))) ? parseFloat(l.elevation) : null);
+  const validElevs = elevs.filter(e => e !== null);
+  let elevHtml = '';
+  if (validElevs.length >= 2) {
+    const lowest = Math.min(...validElevs);
+    const highest = Math.max(...validElevs);
+    const diff = highest - lowest;
+    elevHtml = `
+      <div style="margin-top:5px; padding:5px 7px; background:#F0FDF4; border:1.5px solid #86EFAC; border-radius:6px;">
+        <div style="font-size:7.2px; font-weight:900; color:#166534; margin-bottom:3px; text-transform:uppercase; letter-spacing:0.3px;">🏔 Ketinggian Elevasi (mdpl)</div>
+        <div style="display:flex; justify-content:space-between; font-size:7px;">
+          <span>Rentang Ketinggian: <strong>${lowest.toFixed(1)} – ${highest.toFixed(1)} mdpl</strong></span>
+          <strong style="color:#15803D;">Δh = ${diff.toFixed(1)} m</strong>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div style="margin-top:5px; padding:5px 7px; background:#EFF6FF; border:1.5px solid #93C5FD; border-radius:6px;">
+      <div style="font-size:7.2px; font-weight:900; color:#1E3A8A; margin-bottom:3px; text-transform:uppercase; letter-spacing:0.3px;">📏 Jarak Antar-Titik (Haversine WGS-84)</div>
+      <div style="font-size:7px; line-height:1.7;">${segRows}</div>
+      <div style="margin-top:3px; padding:3px 5px; background:#DBEAFE; border-radius:4px; font-size:7px; display:flex; justify-content:space-between;">
+        <span style="color:#1E40AF; font-weight:700;">▶ Total Jarak Akumulasi:</span>
+        <strong style="color:#1D4ED8; font-size:7.5px;">${formatDist(totalDist)}</strong>
+      </div>
+    </div>
+    ${elevHtml}
+  `;
+}
+
+function getPhotoSrc(pData) {
+  if (!pData) return null;
+  if (typeof pData === 'string') return pData;
+  if (typeof pData === 'object' && pData.img) return pData.img;
+  return null;
+}
+
+async function initPrintPreview() {
+  const target = document.getElementById('print-content-target');
+  if (!reportId) {
+    target.innerHTML = '<div style="text-align:center;color:white;padding:60px;">ID Laporan tidak valid.</div>';
+    return;
+  }
+
+  const raw = await localforage.getItem(SAPDI_KEYS.HISTORY);
+  let history = [];
+  if (Array.isArray(raw)) history = raw;
+  else if (typeof raw === 'string') { try { history = JSON.parse(raw); } catch {} }
+
+  const report = history.find(h => h.id === reportId);
+  if (!report) {
+    target.innerHTML = '<div style="text-align:center;color:white;padding:60px;">Laporan tidak ditemukan.</div>';
+    return;
+  }
+
+  renderReportPages(report);
+}
+
+function renderReportPages(report) {
+  const target = document.getElementById('print-content-target');
+  const type = report.type || 'perbaikan';
+  const typeLabel = report.typeLabel || 'Laporan Pekerjaan';
+  const items = Array.isArray(report.data) ? report.data : [];
+
+  let itemsPerPage = 1;
+  const totalPages = Math.ceil(items.length / itemsPerPage) || 1;
+  let html = '';
+  mapInitJobs = [];
+
+  for (let page = 1; page <= totalPages; page++) {
+    const pageItems = items.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+
+    let itemsHtml = '';
+    pageItems.forEach((item, idx) => {
+      const globalIdx = (page - 1) * itemsPerPage + idx + 1;
+      itemsHtml += renderSinglePrintItem(item, globalIdx, type, page, idx);
+    });
+
+    html += `
+      <div class="page-container type-${type}" id="page-${page}">
+        <!-- KOP SURAT RESMI -->
+        <div class="doc-header">
+          <img src="../assets/icons/logo.png" class="doc-header-logo" alt="Logo" style="object-fit:contain; background:white; padding:2px;">
+          <div class="doc-header-text">
+            <div class="doc-header-title">DIS-NRW — DISTRIBUSI AIR & PENGENDALIAN NRW</div>
+            <div class="doc-header-sub">PERUMDA Air Minum Amerta Toraya</div>
+          </div>
+          <div class="doc-header-date">
+            <span class="doc-type-badge">${typeLabel}</span>
+            <div style="margin-top:2px; font-weight:600;">${report.timestamp || report.date}</div>
+          </div>
+        </div>
+
+        <!-- KONTEN PEKERJAAN -->
+        <div class="print-items-wrapper">
+          ${itemsHtml}
+        </div>
+
+        <!-- FOOTER HALAMAN -->
+        <div class="doc-footer">
+          <span>DIS-NRW · PERUMDA Air Minum Amerta Toraya · Dokumen Resmi Otomatis dengan Watermark GPS & Waktu</span>
+          <span>Halaman ${page} dari ${totalPages}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  target.innerHTML = html;
+
+  // Inisialisasi peta satelit setelah HTML dirender di DOM
+  setTimeout(() => {
+    initSatelliteMaps();
+  }, 400);
+}
+
+function renderSinglePrintItem(item, index, type, pageNum, itemIdx) {
+  const officer = item.officer ? `👤 ${item.officer}` : 'Petugas Distribusi';
+  const workDate = item.workDate ? formatIndoDate(item.workDate) : '-';
+  const desc = item.desc || '-';
+  const mapId = `sat-map-${pageNum}-${itemIdx}`;
+
+  // Ambil semua lokasi foto untuk tracking
+  const locs = extractItemLocations(item, type);
+  if (locs.length > 0) {
+    mapInitJobs.push({ id: mapId, locations: locs, type: type });
+  }
+
+  // Generate daftar lokasi lengkap untuk setiap foto + statistik GIS terpisah
+  let locationsListHtml = '';
+  if (locs.length > 0) {
+    locs.forEach((loc, idx) => {
+      const pinNum = locs.length > 1 ? `Titik #${idx+1} (${loc.label})` : `Lokasi Pekerjaan`;
+      const addrClean = loc.addr && !loc.addr.includes('otomatis') && !loc.addr.includes('Menerjemahkan') && !loc.addr.includes('Mencari') ? loc.addr.replace(/^Koordinat:\s*/i, '').trim() : '';
+      const elevStr = (loc.elevation !== null && loc.elevation !== undefined && !isNaN(loc.elevation))
+        ? `<span style="color:#166534; font-weight:700;"> · 🏔 ${parseFloat(loc.elevation).toFixed(1)} mdpl</span>` : '';
+      locationsListHtml += `
+        <div class="print-loc-item">
+          <div class="print-loc-title">📍 ${pinNum}${elevStr}</div>
+          ${addrClean ? `<div class="print-loc-addr"><span style="color:#005F8E;font-weight:700;">Nama Lokasi:</span> ${addrClean}</div>` : ''}
+          <div style="font-size:7.5px; margin-top:1px;">
+            <span style="color:#555;font-weight:700;">GPS:</span>
+            <a href="${loc.mapsUrl}" target="_blank" class="print-loc-link">
+              ${loc.lat.toFixed(6)}, ${loc.lng.toFixed(6)}
+            </a>
+          </div>
+        </div>
+      `;
+    });
+    // Tambahkan ringkasan statistik GIS terpisah per bidang
+    locationsListHtml += renderGISStatsHtml(locs, type);
+  } else {
+    locationsListHtml = '<div style="font-size:7.5px; color:#888;">Nama lokasi / GPS belum terdeteksi.</div>';
+  }
+
+  // Extra Details
+  let extraMetaList = [];
+  if (item.source) extraMetaList.push(`<div><span class="info-label">Sumber IPA:</span> <span class="info-val">${item.source}</span></div>`);
+  if (item.alat) extraMetaList.push(`<div><span class="info-label">Peralatan:</span> <span class="info-val">${item.alat}</span></div>`);
+  if (item.bahan) extraMetaList.push(`<div><span class="info-label">Bahan:</span> <span class="info-val">${item.bahan}</span></div>`);
+  if (item.kategori) extraMetaList.push(`<div><span class="info-label">Kategori Tugas:</span> <span class="info-val">${item.kategori}</span></div>`);
+  const extraMetaHtml = extraMetaList.join('');
+
+  // ============================================================
+  // [A] KASUS APEL PAGI: 1 FOTO BESAR + KETERANGAN + PETA
+  // ============================================================
+  if (type === 'apel') {
+    const src1 = getPhotoSrc(item.p1);
+    return `
+      <div class="print-item-card">
+        <div class="print-item-header">
+          <span>ITEM #${index} — ${officer}</span>
+          <span>📅 ${workDate}</span>
+        </div>
+
+        <!-- 1. Foto Apel Full Width Sangat Besar -->
+        <div class="print-apel-photo-box">
+          <div class="print-photo-card-lbl">DOKUMENTASI FOTO APEL / RAPAT</div>
+          ${src1 ? `<img src="${src1}">` : '<div class="print-empty-photo">Tidak ada foto apel</div>'}
+        </div>
+
+        <!-- 2. Keterangan Kegiatan -->
+        <div class="print-desc-section-full">
+          <strong>📝 Keterangan:</strong> ${desc}
+        </div>
+
+        <!-- 3. Lokasi & Peta Satelit -->
+        <div class="print-location-section-full">
+          <div style="flex:1;">
+            <span class="info-label" style="margin-bottom:2px; display:block;">📍 Nama Lokasi & Koordinat:</span>
+            ${locationsListHtml}
+          </div>
+          ${locs.length > 0 ? `<div class="print-map-box-bottom" id="${mapId}"></div>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  // ============================================================
+  // [B] KASUS PERBAIKAN KEBOCORAN & TUGAS LAIN (3 FOTO VERTIKAL BESAR)
+  // ============================================================
+  if (type === 'perbaikan' || type === 'tugaslain') {
+    const src1 = getPhotoSrc(item.p1);
+    const src2 = getPhotoSrc(item.p2);
+    const src3 = getPhotoSrc(item.p3);
+
+    return `
+      <div class="print-item-card">
+        <div class="print-item-header">
+          <span>ITEM #${index} — ${officer}</span>
+          <span>📅 ${workDate}</span>
+        </div>
+
+        <div class="print-2col-container">
+          <!-- Kolom Kiri: 3 Foto Vertikal Ukuran Besar (Watermark Timemark Sangat Jelas) -->
+          <div class="print-photos-vertical-col">
+            <div class="print-photo-block-vert">
+              <div class="print-photo-card-lbl">1. SEBELUM</div>
+              ${src1 ? `<img src="${src1}">` : '<div class="print-empty-photo">Sebelum</div>'}
+            </div>
+            <div class="print-photo-block-vert">
+              <div class="print-photo-card-lbl">2. PROSES</div>
+              ${src2 ? `<img src="${src2}">` : '<div class="print-empty-photo">Proses</div>'}
+            </div>
+            <div class="print-photo-block-vert">
+              <div class="print-photo-card-lbl">3. SESUDAH</div>
+              ${src3 ? `<img src="${src3}">` : '<div class="print-empty-photo">Sesudah</div>'}
+            </div>
+          </div>
+
+          <!-- Kolom Kanan: Rincian Lengkap & Peta Satelit Tracking -->
+          <div class="print-details-right-col">
+            <div class="info-row">
+              <span class="info-label">📝 Keterangan Pekerjaan</span>
+              <div class="info-val" style="font-weight:600;">${desc}</div>
+            </div>
+
+            ${extraMetaHtml}
+
+            <div class="info-row" style="margin-top:2px;">
+              <span class="info-label">📍 Nama Lokasi Tiap Foto</span>
+              <div>${locationsListHtml}</div>
+            </div>
+
+            <!-- Peta Satelit dengan Jalur Tracking -->
+            ${locs.length > 0 ? `
+              <div style="margin-top:2px;">
+                <span class="info-label" style="display:block;">🛰️ Peta Satelit & Jalur Tracking:</span>
+                <div class="print-map-box-right" id="${mapId}"></div>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ============================================================
+  // [C] KASUS UJI TEKANAN AIR & BUKA TUTUP VALVE
+  // ============================================================
+  let photoGridHtml = '';
+  if (type === 'uji_tekanan') {
+    const pKeys = ['p1', 'p2', 'p3', 'p4', 'p5'];
+    const labels = [
+      `1. Terdekat (${item.bar1 || '-'} Bar)`,
+      `2. Menengah (${item.bar2 || '-'} Bar)`,
+      `3. Terjauh (${item.bar3 || '-'} Bar)`,
+      `4. Terendah (${item.bar4 || '-'} Bar)`,
+      `5. Tertinggi (${item.bar5 || '-'} Bar)`
+    ];
+    let topCells = '', btmCells = '';
+    pKeys.slice(0, 3).forEach((k, i) => {
+      const src = getPhotoSrc(item[k]);
+      topCells += `
+        <div class="print-grid-photo-cell">
+          <div class="print-photo-card-lbl">${labels[i]}</div>
+          ${src ? `<img src="${src}">` : '<div class="print-empty-photo">-</div>'}
+        </div>
+      `;
+    });
+    pKeys.slice(3, 5).forEach((k, i) => {
+      const src = getPhotoSrc(item[k]);
+      btmCells += `
+        <div class="print-grid-photo-cell">
+          <div class="print-photo-card-lbl">${labels[i+3]}</div>
+          ${src ? `<img src="${src}">` : '<div class="print-empty-photo">-</div>'}
+        </div>
+      `;
+    });
+    photoGridHtml = `
+      <div class="print-grid-3col-photos">${topCells}</div>
+      <div class="print-grid-2col-photos">${btmCells}</div>
+    `;
+  } else {
+    const photos = Array.isArray(item.photos) ? item.photos : [];
+    if (photos.length) {
+      let cells = '';
+      photos.forEach((p, i) => {
+        const src = getPhotoSrc(p.img || p);
+        cells += `
+          <div class="print-grid-photo-cell">
+            <div class="print-photo-card-lbl">${p.lbl || `Foto Valve ${i+1}`}</div>
+            ${src ? `<img src="${src}">` : '<div class="print-empty-photo">-</div>'}
+          </div>
+        `;
+      });
+      photoGridHtml = `<div class="print-grid-2col-photos">${cells}</div>`;
+    } else {
+      photoGridHtml = '<div class="print-empty-photo">Tidak ada foto valve</div>';
+    }
+  }
+
+  return `
+    <div class="print-item-card">
+      <div class="print-item-header">
+        <span>ITEM #${index} — ${officer}</span>
+        <span>📅 ${workDate}</span>
+      </div>
+
+      <!-- Grid Foto Uji Tekanan / Valve -->
+      ${photoGridHtml}
+
+      <!-- Keterangan Pekerjaan -->
+      <div class="print-desc-section-full">
+        <strong>📝 Keterangan:</strong> ${desc}
+        ${extraMetaHtml ? `<div style="margin-top:2px;">${extraMetaHtml}</div>` : ''}
+      </div>
+
+      <!-- Lokasi Semua Titik Foto & Peta Satelit Jalur Tracking -->
+      <div class="print-location-section-full">
+        <div style="flex:1;">
+          <span class="info-label" style="margin-bottom:2px; display:block;">📍 Nama Lokasi Tiap Titik Foto:</span>
+          ${locationsListHtml}
+        </div>
+        ${locs.length > 0 ? `<div class="print-map-box-bottom" id="${mapId}"></div>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+async function getRoadRoute(locs) {
+  if (!locs || locs.length < 2) return { path: locs.map(l => [l.lat, l.lng]), isRoad: false };
+  try {
+    // Hitung total jarak garis lurus antar titik
+    let totalDirectDist = 0;
+    for (let i = 0; i < locs.length - 1; i++) {
+      totalDirectDist += getDistanceMeters(locs[i].lat, locs[i].lng, locs[i+1].lat, locs[i+1].lng);
+    }
+
+    // Jika jarak sangat dekat (< 35m, misal dalam 1 halaman/ruangan), gunakan mode Jalur Jalan Kaki (Walking Dots)
+    if (totalDirectDist < 35) {
+      return { path: locs.map(l => [l.lat, l.lng]), isRoad: false };
+    }
+
+    const coordsQuery = locs.map(l => `${l.lng},${l.lat}`).join(';');
+    const url = `https://router.project-osrm.org/route/v1/driving/${coordsQuery}?overview=full&geometries=geojson`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data && data.routes && data.routes.length > 0 && data.routes[0].geometry) {
+      const roadCoords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+      return { path: roadCoords, isRoad: true };
+    }
+  } catch (err) {
+    console.warn('OSRM routing fallback:', err);
+  }
+  return { path: locs.map(l => [l.lat, l.lng]), isRoad: false };
+}
+
+async function initSatelliteMaps() {
+  for (const job of mapInitJobs) {
+    const el = document.getElementById(job.id);
+    if (!el) continue;
+    try {
+      const locs = job.locations || [];
+      const jobType = job.type || '';
+      if (locs.length === 0) continue;
+
+      const map = L.map(job.id, {
+        zoomControl: false,
+        attributionControl: false,
+        preferCanvas: true
+      });
+
+      // Google Satellite Hybrid Tile — multi-server untuk loading lebih cepat
+      L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        subdomains: ['0', '1', '2', '3'],
+        crossOrigin: true
+      }).addTo(map);
+
+      const pinColors = ['#0084FF', '#FFB300', '#00E676', '#A855F7', '#FF2A6D'];
+      const latLngs = [];
+
+      locs.forEach((loc, i) => {
+        latLngs.push([loc.lat, loc.lng]);
+
+        const bgColor = pinColors[i % pinColors.length];
+        const pinText = locs.length > 1 ? `${i + 1}` : '📍';
+
+        // Pin Lingkaran Cerah Bernomor
+        const markerHtml = `
+          <div style="background:${bgColor}; color:#FFFFFF; border:2px solid #FFFFFF; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:10.5px; box-shadow:0 3px 8px rgba(0,0,0,0.8); line-height:1;">
+            ${pinText}
+          </div>
+        `;
+        const customIcon = L.divIcon({
+          html: markerHtml,
+          className: '',
+          iconSize: [22, 22],
+          iconAnchor: [11, 11]
+        });
+
+        // Lingkaran Waypoint Dasar
+        L.circleMarker([loc.lat, loc.lng], {
+          radius: 6,
+          fillColor: bgColor,
+          color: '#FFFFFF',
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.85
+        }).addTo(map);
+
+        L.marker([loc.lat, loc.lng], { icon: customIcon }).addTo(map);
+      });
+
+      // ============================================================
+      // SMART ADAPTIVE ZOOM — Hitung zoom optimal berdasarkan rentang titik
+      // ============================================================
+      function getAdaptiveZoomParams(latLngPoints) {
+        if (latLngPoints.length <= 1) return { zoom: 17, padding: [30, 30] };
+
+        const lats = latLngPoints.map(p => p[0]);
+        const lngs = latLngPoints.map(p => p[1]);
+        const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+        const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+
+        // Haversine antara corner SW dan NE dari bounding box
+        const R = 6371008.8;
+        const toRad = v => v * Math.PI / 180;
+        const dLat = toRad(maxLat - minLat);
+        const dLng = toRad(maxLng - minLng);
+        const a = Math.sin(dLat/2)**2 + Math.cos(toRad(minLat)) * Math.cos(toRad(maxLat)) * Math.sin(dLng/2)**2;
+        const spanMeters = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+        if (spanMeters < 50)   return { maxZoom: 18, padding: [20, 20] };
+        if (spanMeters < 200)  return { maxZoom: 17, padding: [28, 28] };
+        if (spanMeters < 500)  return { maxZoom: 16, padding: [32, 32] };
+        if (spanMeters < 1000) return { maxZoom: 15, padding: [34, 34] };
+        if (spanMeters < 3000) return { maxZoom: 14, padding: [36, 36] };
+        if (spanMeters < 8000) return { maxZoom: 13, padding: [38, 38] };
+        return { maxZoom: 12, padding: [40, 40] };
+      }
+
+      // ============================================================
+      // RUTE TRACKING PETA: DIPISAH PER BIDANG
+      // ============================================================
+      let allRoutePoints = [...latLngs];
+
+      if (jobType === 'uji_tekanan') {
+        // [KASUS UJI TEKANAN]: Buat 2 Rute Terpisah
+        // Rute A (Bidang Jarak): Titik 1, 2, 3 (Cyan / Biru)
+        const distLocs = locs.filter(l => [0, 1, 2].includes(l.slotIndex));
+        if (distLocs.length >= 2) {
+          const r1 = await getRoadRoute(distLocs);
+          allRoutePoints.push(...r1.path);
+          if (r1.isRoad) {
+            L.polyline(r1.path, { color: '#00E5FF', weight: 4.5, opacity: 0.85 }).addTo(map);
+            L.polyline(r1.path, { color: '#0284C7', weight: 2.5, dashArray: '5, 5', opacity: 1 }).addTo(map);
+          } else {
+            L.polyline(r1.path, { color: '#FFFFFF', weight: 5, dashArray: '1, 8', lineCap: 'round', opacity: 0.9 }).addTo(map);
+            L.polyline(r1.path, { color: '#0284C7', weight: 3.5, dashArray: '1, 8', lineCap: 'round', opacity: 1 }).addTo(map);
+          }
+        }
+
+        // Rute B (Bidang Elevasi): Titik 4 & 5 (Oranye / Amber Garis Putus)
+        const elevLocs = locs.filter(l => [3, 4].includes(l.slotIndex));
+        if (elevLocs.length >= 2) {
+          const r2 = await getRoadRoute(elevLocs);
+          allRoutePoints.push(...r2.path);
+          L.polyline(r2.path, { color: '#FFFFFF', weight: 5, dashArray: '1, 8', lineCap: 'round', opacity: 0.9 }).addTo(map);
+          L.polyline(r2.path, { color: '#16A34A', weight: 3.5, dashArray: '1, 8', lineCap: 'round', opacity: 1 }).addTo(map);
+        }
+      } else if (latLngs.length > 1) {
+        // [KASUS STANDAR]: Satu rute berurutan
+        const routeData = await getRoadRoute(locs);
+        allRoutePoints.push(...routeData.path);
+
+        if (routeData.isRoad) {
+          L.polyline(routeData.path, { color: '#00E5FF', weight: 5, opacity: 0.85 }).addTo(map);
+          L.polyline(routeData.path, { color: '#FF2A6D', weight: 3, dashArray: '6, 6', opacity: 1 }).addTo(map);
+        } else {
+          L.polyline(routeData.path, { color: '#FFFFFF', weight: 6, dashArray: '1, 9', lineCap: 'round', opacity: 0.95 }).addTo(map);
+          L.polyline(routeData.path, { color: '#0084FF', weight: 4, dashArray: '1, 9', lineCap: 'round', opacity: 1 }).addTo(map);
+        }
+      }
+
+      if (latLngs.length > 1) {
+        const bounds = L.latLngBounds(allRoutePoints);
+        const zp = getAdaptiveZoomParams(latLngs);
+        map.fitBounds(bounds, { padding: zp.padding, maxZoom: zp.maxZoom });
+
+        setTimeout(() => {
+          map.invalidateSize();
+          map.fitBounds(bounds, { padding: zp.padding, maxZoom: zp.maxZoom });
+        }, 200);
+      } else {
+        map.setView([locs[0].lat, locs[0].lng], 17);
+        setTimeout(() => {
+          map.invalidateSize();
+          map.setView([locs[0].lat, locs[0].lng], 17);
+        }, 200);
+      }
+    } catch(e) {
+      console.warn("Gagal inisialisasi peta satelit tracking:", e);
+    }
+  }
+}
+
+function downloadPDF() {
+  document.body.classList.add('pdf-export');
+  const toolbar = document.getElementById('toolbar');
+  if (toolbar) toolbar.style.display = 'none';
+
+  // Target wadah utama yang berisi seluruh lembar dokumen A4
+  const element = document.getElementById('print-content-target');
+  
+  const opt = {
+    margin: 0,
+    filename: `DIS_NRW_Laporan_${reportId}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: 0 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['css', 'legacy'] }
+  };
+
+  html2pdf().set(opt).from(element).save().then(() => {
+    document.body.classList.remove('pdf-export');
+    if (toolbar) toolbar.style.display = 'flex';
+  }).catch(err => {
+    console.error('Export PDF error:', err);
+    document.body.classList.remove('pdf-export');
+    if (toolbar) toolbar.style.display = 'flex';
+    window.print();
+  });
+}
+
+window.onload = () => initPrintPreview();
+</script>
+</body>
+</html>

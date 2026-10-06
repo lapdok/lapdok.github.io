@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Login Petugas — DIS-NRW Amerta Toraya</title>
+  <meta name="description" content="Aplikasi Dokumentasi Kinerja Lapangan Distribusi Air & Pengendalian NRW PDAM">
+  <meta name="theme-color" content="#005F8E">
+  <link rel="manifest" href="assets/manifest.json">
+  <link rel="icon" href="assets/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <link rel="stylesheet" href="css/main.css">
+  <script src="js/skala.js"></script>
+  <script src="js/auth-guard.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #002B45 0%, #005F8E 50%, #00A6C7 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 16px;
+      margin: 0;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 420px;
+      background: rgba(255, 255, 255, 0.96);
+      border-radius: 20px;
+      padding: 32px 28px;
+      box-shadow: 0 16px 50px rgba(0, 30, 60, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .login-brand {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .login-logo {
+      width: 76px;
+      height: 76px;
+      border-radius: 18px;
+      object-fit: contain;
+      background: white;
+      padding: 6px;
+      box-shadow: 0 6px 20px rgba(0, 95, 142, 0.2);
+      border: 2px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    .login-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: 0.5px;
+    }
+
+    .login-sub {
+      font-size: 11.5px;
+      color: var(--text2);
+      margin-top: 3px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .login-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .login-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--primary-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 12px;
+      font-size: 16px;
+      color: var(--text3);
+      pointer-events: none;
+    }
+
+    .login-input {
+      width: 100%;
+      padding: 12px 14px 12px 38px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-family: inherit;
+      color: var(--text);
+      background: #F7FAFC;
+      transition: all 0.2s;
+    }
+
+    .login-input:focus {
+      outline: none;
+      border-color: var(--teal);
+      background: white;
+      box-shadow: 0 0 0 3px rgba(0, 166, 199, 0.18);
+    }
+
+    .btn-toggle-pwd {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      color: var(--text3);
+      padding: 4px;
+    }
+
+    .login-options {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    .remember-box {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .btn-submit-login {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--teal) 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0, 95, 142, 0.3);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .btn-submit-login:hover {
+      box-shadow: 0 6px 22px rgba(0, 95, 142, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-submit-login:active {
+      transform: scale(0.98);
+      opacity: 0.9;
+    }
+
+    .login-alert {
+      display: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+
+    .login-alert.error {
+      display: block;
+      background: #FEE2E2;
+      color: #DC2626;
+      border: 1.5px solid #F87171;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .login-alert.success {
+      display: block;
+      background: #DCFCE7;
+      color: #16A34A;
+      border: 1.5px solid #86EFAC;
+    }
+
+    .login-input.input-error {
+      border-color: #EF4444 !important;
+      background: #FFF5F5 !important;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .shake {
+      animation: shake 0.4s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .login-footer {
+      text-align: center;
+      margin-top: 22px;
+      font-size: 11px;
+      color: var(--text3);
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-container">
+  <div class="login-brand" id="loginBrandContainer">
+    <!-- Diisi secara dinamis oleh script: Mode Stealth (jika belum pernah login) vs Mode Resmi -->
+  </div>
+
+  <div id="login-alert" class="login-alert"></div>
+
+  <form class="login-form" id="loginForm" onsubmit="handleLoginSubmit(event)">
+    <div class="login-input-group">
+      <label class="login-label" id="lblUsername">👤 Username / ID Akses</label>
+      <div class="input-wrapper">
+        <span class="input-icon">👤</span>
+        <input type="text" id="username" class="login-input" placeholder="Masukkan ID / username..." required autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" autofocus>
+      </div>
+    </div>
+
+    <div class="login-input-group">
+      <label class="login-label" id="lblPassword">🔒 Kunci Akses (Password)</label>
+      <div class="input-wrapper">
+        <span class="input-icon">🔑</span>
+        <input type="password" id="password" class="login-input" placeholder="Masukkan kata sandi..." required autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false">
+        <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility()" title="Tampilkan/Sembunyikan Kata Sandi">👁️</button>
+      </div>
+    </div>
+
+    <div class="login-options">
+      <label class="remember-box">
+        <input type="checkbox" id="rememberMe" checked>
+        <span>Ingat Perangkat Ini</span>
+      </label>
+    </div>
+
+    <button type="submit" class="btn-submit-login" id="btnLogin">
+      <span>🚀 Masuk ke Sistem</span>
+    </button>
+  </form>
+
+  <div class="login-footer" id="loginFooter">
+    <!-- Diisi dinamis -->
+  </div>
+</div>
+
+<script>
+  const HAS_LOGGED_IN_KEY = "DIS_NRW_DEVICE_RECOGNIZED";
+
+  function initLoginView() {
+    const isRecognized = localStorage.getItem(HAS_LOGGED_IN_KEY) === 'true';
+    const brandContainer = document.getElementById('loginBrandContainer');
+    const footerContainer = document.getElementById('loginFooter');
+    const lblUser = document.getElementById('lblUsername');
+    const lblPass = document.getElementById('lblPassword');
+    const titlePage = document.querySelector('title');
+
+    if (isRecognized) {
+      // MODE RESMI (Perangkat sudah pernah login sebelumnya)
+      if (titlePage) titlePage.textContent = 'Login Petugas — DIS-NRW Amerta Toraya';
+      brandContainer.innerHTML = `
+        <img src="assets/icons/logo.png" alt="Logo DIS-NRW" class="login-logo">
+        <div class="login-title">DIS-NRW</div>
+        <div class="login-sub">Distribusi Air & Pengendalian NRW</div>
+      `;
+      footerContainer.innerHTML = `
+        PERUMDA Air Minum Tirta Amerta Toraya<br>
+        Sistem Dokumentasi Kinerja Lapangan Terenkripsi © 2026
+      `;
+      if (lblUser) lblUser.textContent = '👤 Username / ID Petugas';
+      if (lblPass) lblPass.textContent = '🔒 Kata Sandi (Password)';
+    } else {
+      // MODE PENYAMARAN (STEALTH) — Belum pernah login di perangkat ini
+      if (titlePage) titlePage.textContent = 'Portal Otentikasi Lapangan';
+      brandContainer.innerHTML = `
+        <div style="width:68px; height:68px; border-radius:18px; background:linear-gradient(135deg, #005F8E, #00A6C7); display:flex; align-items:center; justify-content:center; font-size:32px; margin:0 auto 12px; box-shadow:0 6px 20px rgba(0,95,142,0.25); color:white;">🔐</div>
+        <div class="login-title" style="font-size:20px;">Portal Akses Terenkripsi</div>
+        <div class="login-sub" style="font-size:11px; color:var(--text3); margin-top:2px;">Masukkan kredensial untuk memverifikasi akses</div>
+      `;
+      footerContainer.innerHTML = `
+        Sistem Manajemen Data & Kalibrasi Terenkripsi © 2026
+      `;
+      if (lblUser) lblUser.textContent = '👤 Username / ID Akses';
+      if (lblPass) lblPass.textContent = '🔒 Kunci Akses (Password)';
+    }
+  }
+
+  function togglePasswordVisibility() {
+    const pwdInput = document.getElementById('password');
+    if (pwdInput.type === 'password') {
+      pwdInput.type = 'text';
+    } else {
+      pwdInput.type = 'password';
+    }
+  }
+
+  function showAlert(message, type = 'error') {
+    const alertEl = document.getElementById('login-alert');
+    alertEl.textContent = message;
+    alertEl.className = `login-alert ${type}`;
+  }
+
+  function hideAlert() {
+    const alertEl = document.getElementById('login-alert');
+    if (alertEl) alertEl.style.display = 'none';
+    document.getElementById('username')?.classList.remove('input-error');
+    document.getElementById('password')?.classList.remove('input-error');
+  }
+
+  async function handleLoginSubmit(e) {
+    e.preventDefault();
+    hideAlert();
+
+    const u = document.getElementById('username').value.trim();
+    const pwdInput = document.getElementById('password');
+    const p = pwdInput.value;
+    const remember = document.getElementById('rememberMe').checked;
+    const btn = document.getElementById('btnLogin');
+    const container = document.querySelector('.login-container');
+
+    if (!u || !p) {
+      showAlert('Mohon isi ID akses dan kata sandi!');
+      if (!u) document.getElementById('username').classList.add('input-error');
+      if (!p) pwdInput.classList.add('input-error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳ Memverifikasi Kredensial...</span>';
+
+    try {
+      // Verifikasi menggunakan modul terenkripsi skala.js
+      const result = await verifyScaleCredentials(u, p);
+
+      if (result.success) {
+        // Tandai bahwa perangkat ini telah berhasil login
+        localStorage.setItem(HAS_LOGGED_IN_KEY, 'true');
+        showAlert(`✅ Otentikasi berhasil! Selamat bertugas, ${result.user.name}`, 'success');
+        setAuthSession(result.user, remember);
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 800);
+      } else {
+        // Tampilkan pesan kesalahan spesifik
+        const errMsg = result.message || 'Salah memasukkan password! Silakan coba lagi.';
+        showAlert(`❌ ${errMsg}`, 'error');
+        
+        // Efek visual: getar container & border merah pada kolom password
+        if (container) {
+          container.classList.remove('shake');
+          void container.offsetWidth; // Trigger reflow
+          container.classList.add('shake');
+        }
+        pwdInput.classList.add('input-error');
+        pwdInput.value = '';
+        pwdInput.focus();
+
+        btn.disabled = false;
+        btn.innerHTML = '<span>🚀 Masuk ke Sistem</span>';
+      }
+    } catch (err) {
+      console.error('Error otentikasi:', err);
+      // Tampilkan pesan error spesifik untuk memudahkan debug
+      let errDetail = '❌ Terjadi kesalahan sistem saat verifikasi.';
+      if (err && err.message) {
+        errDetail += ' (' + err.message + ')';
+      }
+      showAlert(errDetail, 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<span>🚀 Masuk ke Sistem</span>';
+    }
+  }
+
+  // Hapus tanda merah saat pengguna mulai mengetik kembali
+  document.getElementById('username')?.addEventListener('input', () => {
+    document.getElementById('username').classList.remove('input-error');
+  });
+  document.getElementById('password')?.addEventListener('input', () => {
+    document.getElementById('password').classList.remove('input-error');
+  });
+
+  // Inisialisasi tampilan login saat halaman dibuka
+  initLoginView();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Kebijakan Privasi - DIS-NRW</title>
+  <meta name="theme-color" content="#005F8E">
+  <link rel="stylesheet" href="../css/main.css">
+  <script src="../js/auth-guard.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner" style="display:flex; align-items:center; justify-content:space-around; width:100%;">
+    <a href="../index.html"><span class="nav-icon">🏠</span> Beranda</a>
+    <a href="tampildata.html"><span class="nav-icon">📂</span> Riwayat</a>
+    <a href="javascript:void(0)" onclick="logoutUser()" title="Keluar Akun"><span class="nav-icon">🚪</span> Keluar</a>
+  </div>
+</nav>
+
+<div class="app-header" style="padding:18px 20px 16px;">
+  <div class="header-title" style="font-size:18px;">🔒 Kebijakan Privasi & Keamanan Data</div>
+  <div class="header-sub">Perlindungan Data Lapangan & Privasi Pengguna</div>
+</div>
+
+<div class="container" style="padding-top:14px; padding-bottom:30px;">
+
+  <div class="job-item" style="padding:16px; margin-bottom:14px;">
+    <h3 style="color:var(--primary); margin-bottom:8px; font-size:14px;">1. Penyimpanan Data Lokal Mandiri</h3>
+    <p style="font-size:12px; color:var(--text2); line-height:1.7;">
+      Semua riwayat dokumentasi foto, draft input, dan laporan kinerja disimpan secara lokal pada memori peramban perangkat Anda menggunakan teknologi <strong>IndexedDB (localForage)</strong>. Data laporan tidak dikumpulkan atau dikirimkan ke pihak luar tanpa tindakan ekspor mandiri dari Anda.
+    </p>
+  </div>
+
+  <div class="job-item" style="padding:16px; margin-bottom:14px;">
+    <h3 style="color:var(--primary); margin-bottom:8px; font-size:14px;">2. Izin Akses GPS & Kamera</h3>
+    <p style="font-size:12px; color:var(--text2); line-height:1.7;">
+      Aplikasi membutuhkan izin akses <strong>GPS</strong> semata-mata untuk membubuhkan koordinat titik pekerjaan dan ketinggian elevasi pada stempel watermark foto. Izin <strong>Kamera</strong> digunakan langsung pada perangkat untuk mengambil foto bukti fisik pekerjaan secara nyata di lapangan.
+    </p>
+  </div>
+
+  <div class="job-item" style="padding:16px; margin-bottom:14px;">
+    <h3 style="color:var(--primary); margin-bottom:8px; font-size:14px;">3. Pemrosesan AI Cerdas</h3>
+    <p style="font-size:12px; color:var(--text2); line-height:1.7;">
+      Saat Anda menggunakan fitur pembuatan deskripsi otomatis AI, gambar diproses secara terenkripsi (HTTPS) melalui API resmi Google Gemini hanya untuk membantu menghasilkan ringkasan narasi kalimat pekerjaan tanpa menyimpan foto secara permanen.
+    </p>
+  </div>
+
+  <div class="job-item" style="padding:16px; margin-bottom:14px;">
+    <h3 style="color:var(--primary); margin-bottom:8px; font-size:14px;">4. Integritas Dokumen Cetak</h3>
+    <p style="font-size:12px; color:var(--text2); line-height:1.7;">
+      Setiap berkas PDF yang diunduh langsung dihasilkan di sisi klien (*Client-Side Rendering*) oleh peramban HP/komputer Anda, menjamin kerahasiaan seluruh rekaman teknis dan dokumentasi operasional.
+    </p>
+  </div>
+
+  <div style="text-align:center; margin-top:20px;">
+    <a href="../index.html" class="btn-primary" style="display:inline-flex; text-decoration:none; padding:12px 26px;">← Kembali ke Beranda</a>
+  </div>
+
+</div>
+
+<!-- Footer Navigasi -->
+<div style="text-align:center; padding:20px 16px; font-size:11px; color:var(--text3);">
+  <div style="margin-bottom:6px;">
+    <a href="panduan.html" style="color:var(--primary); text-decoration:none; margin:0 8px;">Panduan</a>
+    <a href="pertanggungjawaban.html" style="color:var(--primary); text-decoration:none; margin:0 8px;">Standar Pemeriksaan</a>
+    <a href="privacy.html" style="color:var(--primary); text-decoration:none; margin:0 8px; font-weight:700;">Privasi</a>
+  </div>
+  DIS-NRW · Sistem Dokumentasi Terpadu & Terverifikasi
+</div>
+
+</body>
+</html>

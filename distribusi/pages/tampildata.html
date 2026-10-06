@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Riwayat Laporan - DIS-NRW</title>
+  <meta name="theme-color" content="#005F8E">
+  <link rel="manifest" href="../assets/manifest.json">
+  <link rel="stylesheet" href="../css/main.css">
+  <script src="../js/auth-guard.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+  <script src="../js/core.js"></script>
+  <script src="../js/jarvis.js"></script>
+  <style>
+    .badge-apel { background: #3B82F6; }
+    .badge-uji_tekanan { background: #00A6C7; }
+    .badge-valve { background: #F5A623; }
+    .badge-perbaikan { background: #EF4444; }
+    .badge-tugaslain { background: #8B5CF6; }
+    
+    .filter-tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .filter-btn {
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: white;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text2);
+      white-space: nowrap;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .filter-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    .stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .stat-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 8px;
+      text-align: center;
+    }
+    .stat-number { font-size: 18px; font-weight: 800; color: var(--primary); }
+    .stat-label { font-size: 9px; color: var(--text3); font-weight: 600; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner" style="display:flex; align-items:center; justify-content:space-around; width:100%;">
+    <a href="../index.html"><span class="nav-icon">🏠</span> Beranda</a>
+    <a href="tampildata.html" class="active"><span class="nav-icon">📂</span> Riwayat</a>
+    <a href="javascript:void(0)" onclick="logoutUser()" title="Keluar Akun"><span class="nav-icon">🚪</span> Keluar</a>
+  </div>
+</nav>
+
+<div class="app-header" style="padding:18px 20px 16px;">
+  <div class="header-title" style="font-size:18px;">📂 Riwayat Laporan Kinerja</div>
+  <div class="header-sub">Kelola, cetak, dan ekspor arsip laporan lapangan</div>
+</div>
+
+<div class="main-content" style="padding-top:14px;">
+
+  <!-- Quick Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-number" id="stat-total">0</div>
+      <div class="stat-label">Total Laporan</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="stat-items">0</div>
+      <div class="stat-label">Total Item</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="stat-photos">0</div>
+      <div class="stat-label">Total Foto</div>
+    </div>
+  </div>
+
+  <!-- Filter Tabs -->
+  <div class="filter-tabs">
+    <button class="filter-tab active" onclick="filterType('all', this)">Semua (Semua)</button>
+    <button class="filter-tab" onclick="filterType('apel', this)">🎖️ Apel Pagi</button>
+    <button class="filter-tab" onclick="filterType('uji_tekanan', this)">🔧 Uji Tekanan</button>
+    <button class="filter-tab" onclick="filterType('valve', this)">🔩 Valve</button>
+    <button class="filter-tab" onclick="filterType('perbaikan', this)">🚰 Kebocoran</button>
+    <button class="filter-tab" onclick="filterType('tugaslain', this)">📋 Tugas Lain</button>
+  </div>
+
+  <!-- Search & Date Filter -->
+  <div class="filter-bar">
+    <div class="filter-row">
+      <input type="text" class="filter-input" id="search-input" placeholder="🔍 Cari keterangan/lokasi..." oninput="renderHistory()">
+      <input type="date" class="filter-input" id="date-filter" onchange="renderHistory()" style="max-width:130px;">
+    </div>
+  </div>
+
+  <!-- History List -->
+  <div id="history-list">
+    <div class="empty-state">
+      <div class="empty-icon">📂</div>
+      <div class="empty-title">Memuat Riwayat...</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let allHistory = [];
+let currentFilterType = 'all';
+
+const typeBadgeClass = {
+  'apel': 'badge-apel',
+  'uji_tekanan': 'badge-uji_tekanan',
+  'valve': 'badge-valve',
+  'perbaikan': 'badge-perbaikan',
+  'tugaslain': 'badge-tugaslain'
+};
+
+const formPages = {
+  'apel': 'form-apel.html',
+  'uji_tekanan': 'form-uji-tekanan.html',
+  'valve': 'form-valve.html',
+  'perbaikan': 'form-perbaikan.html',
+  'tugaslain': 'form-tugaslain.html'
+};
+
+async function loadHistory() {
+  const raw = await localforage.getItem(SAPDI_KEYS.HISTORY);
+  if (Array.isArray(raw)) {
+    allHistory = raw;
+  } else if (typeof raw === 'string') {
+    try { allHistory = JSON.parse(raw); } catch { allHistory = []; }
+  } else {
+    allHistory = [];
+  }
+  
+  // Urutkan newest first
+  allHistory.sort((a,b) => b.id - a.id);
+  updateStats();
+  renderHistory();
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = allHistory.length;
+  let totalItems = 0;
+  let totalPhotos = 0;
+
+  allHistory.forEach(h => {
+    const data = Array.isArray(h.data) ? h.data : [];
+    totalItems += data.length;
+    data.forEach(item => {
+      if (item.photos && Array.isArray(item.photos)) {
+        totalPhotos += item.photos.filter(p => p.img).length;
+      } else {
+        ['p1','p2','p3','p4','p5'].forEach(k => {
+          if (item[k]) totalPhotos++;
+        });
+      }
+    });
+  });
+
+  document.getElementById('stat-items').textContent = totalItems;
+  document.getElementById('stat-photos').textContent = totalPhotos;
+}
+
+function filterType(type, el) {
+  currentFilterType = type;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderHistory();
+}
+
+function renderHistory() {
+  const container = document.getElementById('history-list');
+  const query = (document.getElementById('search-input')?.value || '').toLowerCase();
+  const dateFilter = document.getElementById('date-filter')?.value;
+
+  let filtered = allHistory.filter(h => {
+    if (currentFilterType !== 'all' && h.type !== currentFilterType) return false;
+    if (dateFilter && h.date !== dateFilter) return false;
+    if (query) {
+      const dataStr = JSON.stringify(h).toLowerCase();
+      if (!dataStr.includes(query)) return false;
+    }
+    return true;
+  });
+
+  if (!filtered.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <div class="empty-title">Belum Ada Riwayat</div>
+        <div class="empty-sub">Laporan yang Anda simpan akan muncul di sini.</div>
+      </div>
+    `;
+    return;
+  }
+
+  let html = '';
+  filtered.forEach(h => {
+    const type = h.type || 'perbaikan';
+    const badgeClass = typeBadgeClass[type] || 'badge-perbaikan';
+    const typeLabel = h.typeLabel || 'Laporan Pekerjaan';
+    const data = Array.isArray(h.data) ? h.data : [];
+    const firstItem = data[0] || {};
+    
+    // Ekstraksi thumbnail yang benar (objek {img: '...'} atau string DataURL)
+    let thumb = null;
+    const keys = ['p1', 'p2', 'p3', 'p4', 'p5'];
+    for (const k of keys) {
+      const val = firstItem[k];
+      if (val) {
+        if (typeof val === 'object' && val !== null && val.img) { thumb = val.img; break; }
+        if (typeof val === 'string' && val.length > 30) { thumb = val; break; }
+      }
+    }
+    if (!thumb && Array.isArray(firstItem.photos) && firstItem.photos.length) {
+      const p = firstItem.photos[0];
+      if (typeof p === 'object' && p !== null && p.img) thumb = p.img;
+      else if (typeof p === 'string' && p.length > 30) thumb = p;
+    }
+
+    const itemCount = data.length;
+    const firstDesc = firstItem.desc || firstItem.keterangan || '(Tanpa keterangan)';
+    const firstAddr = firstItem.addr || 'Lokasi tersimpan';
+    const officer = firstItem.officer ? `👤 ${firstItem.officer}` : '';
+
+    html += `
+      <div class="history-item">
+        <div class="history-item-header">
+          <span class="history-badge ${badgeClass}">${typeLabel}</span>
+          <span class="history-date">📅 ${h.timestamp || h.date}</span>
+        </div>
+
+        ${thumb ? `<img src="${thumb}" class="history-thumb" alt="Foto Laporan" onerror="this.outerHTML='<div class=\\'history-thumb-placeholder\\'>📷</div>'">` : `<div class="history-thumb-placeholder">📷</div>`}
+
+        <div class="history-body">
+          <div style="font-size:11px;font-weight:700;color:var(--primary);margin-bottom:4px;">
+            ${itemCount} Entri Pekerjaan ${officer ? `· ${officer}` : ''}
+          </div>
+          <div class="history-desc">
+            ${firstDesc.length > 120 ? firstDesc.substring(0, 120) + '...' : firstDesc}
+          </div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:12px;">
+            📍 ${firstAddr.length > 60 ? firstAddr.substring(0, 60) + '...' : firstAddr}
+          </div>
+
+          <div class="history-actions">
+            <button class="btn-hist-action btn-hist-pdf" onclick="openPrintPreview(${h.id})">
+              🖨️ Cetak PDF
+            </button>
+            <button class="btn-hist-action" onclick="editHistoryItem(${h.id}, '${type}')">
+              ✏️ Edit
+            </button>
+            <button class="btn-hist-action btn-hist-hapus" onclick="deleteHistoryItem(${h.id})">
+              🗑️ Hapus
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function openPrintPreview(id) {
+  location.href = `print-preview.html?id=${id}`;
+}
+
+async function editHistoryItem(id, type) {
+  const item = allHistory.find(h => h.id === id);
+  if (!item) return;
+  await localforage.setItem(SAPDI_KEYS.DRAFT, item.data);
+  await localforage.setItem(SAPDI_KEYS.EDIT_ID, id);
+  const targetPage = formPages[type] || 'form-perbaikan.html';
+  location.href = targetPage;
+}
+
+async function deleteHistoryItem(id) {
+  if (!confirm('Apakah Anda yakin ingin menghapus laporan ini dari riwayat?')) return;
+  allHistory = allHistory.filter(h => h.id !== id);
+  await localforage.setItem(SAPDI_KEYS.HISTORY, allHistory);
+  Jarvis.pandu('hapus');
+  showToast('🗑️ Laporan berhasil dihapus');
+  updateStats();
+  renderHistory();
+}
+
+window.onload = () => loadHistory();
+</script>
+</body>
+</html>

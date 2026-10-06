@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>DIS-NRW - Distribusi Air & Pengendalian NRW</title>
+  <meta name="description" content="Aplikasi Dokumentasi Kinerja Lapangan Distribusi Air & Pengendalian NRW PDAM">
+  <meta name="theme-color" content="#005F8E">
+  <link rel="manifest" href="assets/manifest.json">
+  <link rel="icon" href="assets/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DIS-NRW">
+  <link rel="stylesheet" href="css/main.css">
+  <script src="js/auth-guard.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+  <script src="js/jarvis.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner" style="display:flex; align-items:center; justify-content:space-around; width:100%;">
+    <a href="index.html" class="active">
+      <span class="nav-icon">🏠</span> Beranda
+    </a>
+    <a href="pages/tampildata.html">
+      <span class="nav-icon">📂</span> Riwayat
+    </a>
+    <a href="javascript:void(0)" onclick="logoutUser()" title="Keluar Akun">
+      <span class="nav-icon">🚪</span> Keluar
+    </a>
+  </div>
+</nav>
+
+<div class="app-header">
+  <img src="assets/icons/logo.png" alt="DIS-NRW Logo" class="header-logo" style="width:72px; height:72px; background:white; padding:4px;">
+  <div class="header-title" style="font-size:22px;">DIS-NRW</div>
+  <div class="header-sub" style="font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Distribusi Air & Pengendalian NRW</div>
+</div>
+
+<div class="main-content">
+
+  <!-- Live counter -->
+  <div class="live-card">
+    <div style="display:flex;align-items:center;">
+      <div class="live-dot"></div>
+      <span style="font-size:12px;font-weight:600;color:var(--text2)">Sistem Aktif</span>
+    </div>
+    <span style="font-size:11px;color:var(--text3)" id="tanggal-hari-ini"></span>
+  </div>
+
+  <!-- PWA Install Banner v2 -->
+  <div id="pwa-install-banner" style="display:none; position:relative; background:linear-gradient(135deg, #003D5C 0%, #005F8E 50%, #0095D5 100%); color:white; border-radius:14px; padding:14px 16px; margin-bottom:14px; box-shadow:0 6px 20px rgba(0,95,142,0.35); align-items:center; justify-content:space-between; gap:10px; overflow:hidden;">
+    <!-- Dekorasi latar -->
+    <div style="position:absolute;top:-18px;right:-18px;width:80px;height:80px;background:rgba(255,255,255,0.06);border-radius:50%;"></div>
+    <div style="position:absolute;bottom:-25px;right:40px;width:60px;height:60px;background:rgba(255,255,255,0.05);border-radius:50%;"></div>
+    <div style="display:flex; align-items:center; gap:11px; position:relative;">
+      <div id="pwa-banner-icon" style="font-size:26px; animation:pwaPulse 2s infinite;">📲</div>
+      <div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div id="pwa-banner-title" style="font-weight:800; font-size:13px;">Pasang Aplikasi DIS-NRW</div>
+          <span style="background:rgba(255,255,255,0.2);font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;letter-spacing:0.5px;">v6</span>
+        </div>
+        <div id="pwa-banner-sub" style="font-size:11px; opacity:0.85; margin-top:2px;">Akses offline · Layar Utama · Notifikasi</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;flex-shrink:0;position:relative;">
+      <button id="btn-pwa-dismiss" title="Tutup" style="background:rgba(255,255,255,0.15);color:white;border:none;border-radius:6px;font-size:14px;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+      <button id="btn-pwa-install" style="background:#FFF; color:#005F8E; border:none; border-radius:8px; font-weight:800; font-size:12px; padding:7px 16px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.2); white-space:nowrap;">⬇ Install</button>
+    </div>
+  </div>
+
+  <!-- PWA Modal Panduan Install -->
+  <div id="pwa-guide-modal" style="display:none; position:fixed; inset:0; background:rgba(0,20,40,0.72); z-index:9999; align-items:flex-end; justify-content:center; backdrop-filter:blur(4px);">
+    <div style="background:white; border-radius:22px 22px 0 0; padding:24px 20px 36px; width:100%; max-width:480px; max-height:85vh; overflow-y:auto; box-shadow:0 -8px 40px rgba(0,0,0,0.3); animation:slideUp 0.3s ease;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <div>
+          <div style="font-size:16px;font-weight:800;color:#003D5C;">📲 Cara Install DIS-NRW</div>
+          <div style="font-size:11px;color:#64748b;margin-top:2px;">Pilih platform perangkat Anda</div>
+        </div>
+        <button id="btn-pwa-modal-close" style="background:#f1f5f9;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+      </div>
+      <!-- Tab platform -->
+      <div style="display:flex;gap:6px;margin-bottom:18px;">
+        <button class="pwa-tab active" data-tab="android" style="flex:1;padding:8px 4px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;background:#005F8E;color:white;">🤖 Android</button>
+        <button class="pwa-tab" data-tab="ios" style="flex:1;padding:8px 4px;border-radius:8px;border:2px solid #e2e8f0;font-size:11px;font-weight:700;cursor:pointer;background:white;color:#475569;">🍎 iPhone/iPad</button>
+        <button class="pwa-tab" data-tab="desktop" style="flex:1;padding:8px 4px;border-radius:8px;border:2px solid #e2e8f0;font-size:11px;font-weight:700;cursor:pointer;background:white;color:#475569;">💻 Desktop/PC</button>
+      </div>
+      <!-- Konten Android -->
+      <div id="pwa-tab-android" class="pwa-tab-content">
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:700;color:#15803d;margin-bottom:8px;">✅ Cara Otomatis (Chrome / Edge Android)</div>
+          <div style="font-size:12px;color:#166534;line-height:1.8;">
+            1️⃣ Buka DIS-NRW di browser Chrome/Edge<br>
+            2️⃣ Banner <strong>"Pasang Aplikasi"</strong> akan muncul di bawah<br>
+            3️⃣ Ketuk tombol <strong>⬇ Install</strong><br>
+            4️⃣ Konfirmasi → aplikasi terpasang! 🎉
+          </div>
+        </div>
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px;">
+          <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:8px;">⚙️ Cara Manual (jika banner tidak muncul)</div>
+          <div style="font-size:12px;color:#1e40af;line-height:1.8;">
+            1️⃣ Ketuk menu <strong>⋮ (titik tiga)</strong> kanan atas browser<br>
+            2️⃣ Pilih <strong>"Tambahkan ke layar Utama"</strong><br>
+            3️⃣ Ketuk <strong>Tambahkan</strong> → Selesai! ✅
+          </div>
+        </div>
+      </div>
+      <!-- Konten iOS -->
+      <div id="pwa-tab-ios" class="pwa-tab-content" style="display:none;">
+        <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px;margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:700;color:#c2410c;margin-bottom:8px;">🍎 Safari iPhone / iPad</div>
+          <div style="font-size:12px;color:#7c2d12;line-height:1.8;">
+            1️⃣ Buka DIS-NRW di <strong>Safari</strong> (bukan Chrome)<br>
+            2️⃣ Ketuk ikon <strong>⬆ Bagikan</strong> (kotak dengan panah ke atas)<br>
+            3️⃣ Gulir ke bawah → pilih <strong>"Tambahkan ke Layar Utama"</strong><br>
+            4️⃣ Ketuk <strong>Tambahkan</strong> → Selesai! ✅
+          </div>
+        </div>
+        <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:10px;padding:12px;">
+          <div style="font-size:11px;color:#92400e;">⚠️ <strong>Penting:</strong> Gunakan browser <strong>Safari</strong> untuk install PWA di iPhone/iPad. Chrome iOS tidak mendukung fitur ini.</div>
+        </div>
+      </div>
+      <!-- Konten Desktop -->
+      <div id="pwa-tab-desktop" class="pwa-tab-content" style="display:none;">
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:700;color:#15803d;margin-bottom:8px;">✅ Chrome / Edge di Windows/Mac</div>
+          <div style="font-size:12px;color:#166534;line-height:1.8;">
+            1️⃣ Buka DIS-NRW di Chrome atau Edge<br>
+            2️⃣ Klik ikon <strong>⊕ Install DIS-NRW</strong> di URL bar kanan<br>
+            3️⃣ Atau klik menu <strong>⋮</strong> → <strong>"Instal DIS-NRW"</strong><br>
+            4️⃣ Klik <strong>Instal</strong> → App terbuka di jendela sendiri! 🎉
+          </div>
+        </div>
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px;">
+          <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:8px;">💡 Keuntungan Install di Desktop</div>
+          <div style="font-size:12px;color:#1e40af;line-height:1.8;">
+            ✅ Buka dari Start Menu / Taskbar / Desktop<br>
+            ✅ Tampil di jendela penuh tanpa tab browser<br>
+            ✅ Tetap bisa digunakan saat offline<br>
+            ✅ Update otomatis saat ada versi baru
+          </div>
+        </div>
+      </div>
+      <button id="btn-pwa-modal-install" style="display:none;width:100%;margin-top:16px;background:linear-gradient(135deg,#005F8E,#0095D5);color:white;border:none;border-radius:10px;padding:13px;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(0,95,142,0.35);">⬇ Install Sekarang</button>
+    </div>
+  </div>
+
+  <style>
+    @keyframes pwaPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
+    @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+    .pwa-tab.active { background:#005F8E!important; color:white!important; border-color:#005F8E!important; }
+  </style>
+
+  <div class="section-label">Pilih Jenis Pekerjaan</div>
+
+  <!-- JOB CARDS -->
+  <div class="job-cards">
+
+    <a class="job-card card-apel" href="pages/form-apel.html">
+      <div class="job-card-icon">🎖️</div>
+      <div class="job-card-body">
+        <div class="job-card-title">Apel Pagi / Rapat / Upacara</div>
+        <div class="job-card-sub">Dokumentasi kehadiran apel & rapat</div>
+      </div>
+      <div class="job-card-badge">1 Foto</div>
+    </a>
+
+    <a class="job-card card-tekanan" href="pages/form-uji-tekanan.html">
+      <div class="job-card-icon">🔧</div>
+      <div class="job-card-body">
+        <div class="job-card-title">Uji Tekanan Air Pada SR</div>
+        <div class="job-card-sub">5 titik ukur: Terdekat, Menengah, Terjauh, Terendah, Tertinggi</div>
+      </div>
+      <div class="job-card-badge">5 Foto</div>
+    </a>
+
+    <a class="job-card card-valve" href="pages/form-valve.html">
+      <div class="job-card-icon">🔩</div>
+      <div class="job-card-body">
+        <div class="job-card-title">Buka Tutup Valve</div>
+        <div class="job-card-sub">Dokumentasi pembukaan & penutupan valve</div>
+      </div>
+      <div class="job-card-badge">Bebas</div>
+    </a>
+
+    <a class="job-card card-kebocoran" href="pages/form-perbaikan.html">
+      <div class="job-card-icon">🚰</div>
+      <div class="job-card-body">
+        <div class="job-card-title">Perbaikan Kebocoran Pipa & Valve</div>
+        <div class="job-card-sub">Pelaksanaan perbaikan pipa instalasi</div>
+      </div>
+      <div class="job-card-badge">3 Foto</div>
+    </a>
+
+    <a class="job-card card-tugaslain" href="pages/form-tugaslain.html">
+      <div class="job-card-icon">📋</div>
+      <div class="job-card-body">
+        <div class="job-card-title">Tugas Lain-lain Perusahaan</div>
+        <div class="job-card-sub">Tugas tambahan di luar tupoksi utama</div>
+      </div>
+      <div class="job-card-badge">3 Foto</div>
+    </a>
+
+    <a class="job-card card-status" href="pages/status.html">
+      <div class="job-card-icon">📡</div>
+      <div class="job-card-body">
+        <div class="job-card-title">Status Realtime Lapangan</div>
+        <div class="job-card-sub">Monitoring cuaca, suhu, GPS & internet</div>
+      </div>
+      <div class="job-card-badge">Live</div>
+    </a>
+
+  </div>
+
+  <!-- Arsip -->
+  <a class="archive-link" href="pages/tampildata.html">
+    <div>
+      <div class="archive-link-text">📂 Riwayat Laporan</div>
+      <div class="archive-link-sub">Lihat, cetak, dan kelola laporan tersimpan</div>
+    </div>
+    <div class="archive-link-arrow">›</div>
+  </a>
+
+  <!-- Info -->
+  <div style="background:white;border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;">
+    <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:8px;">ℹ️ Tentang DIS-NRW</div>
+    <p style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:12px;">
+      <strong>DIS-NRW</strong> adalah aplikasi dokumentasi kinerja lapangan untuk Divisi <strong>Distribusi Air & Pengendalian NRW (Non-Revenue Water)</strong> PDAM. 
+      Dilengkapi GPS watermark otomatis, pratinjau peta satelit (Google Hybrid), panduan suara, dan ekspor laporan PDF format A4 presisi.
+    </p>
+    <a href="pages/pertanggungjawaban.html" style="display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:var(--primary); text-decoration:none; background:#EAF4FF; padding:7px 12px; border-radius:6px; border:1px solid #BAE6FD; transition:all 0.15s ease;">
+      🛡️ Lihat Keabsahan & Standar Pemeriksaan &rarr;
+    </a>
+  </div>
+
+</div>
+
+<!-- Footer -->
+<div style="text-align:center;padding:20px 16px;font-size:11px;color:var(--text3);">
+  <div style="margin-bottom:6px;">
+    <a href="pages/panduan.html" style="color:var(--primary);text-decoration:none;margin:0 8px;">Panduan</a>
+    <a href="pages/pertanggungjawaban.html" style="color:var(--primary);text-decoration:none;margin:0 8px;font-weight:700;">Standar Pemeriksaan</a>
+    <a href="pages/privacy.html" style="color:var(--primary);text-decoration:none;margin:0 8px;">Privasi</a>
+  </div>
+  DIS-NRW © 2026 · Distribusi Air & Pengendalian NRW PDAM
+</div>
+
+<script>
+  // ============================================================
+  // PWA v2 — Service Worker & Install Prompt (Multi-Platform)
+  // ============================================================
+  let deferredPrompt = null;
+  const pwaBanner    = document.getElementById('pwa-install-banner');
+  const btnInstall   = document.getElementById('btn-pwa-install');
+  const btnDismiss   = document.getElementById('btn-pwa-dismiss');
+  const guideModal   = document.getElementById('pwa-guide-modal');
+  const btnModalClose  = document.getElementById('btn-pwa-modal-close');
+  const btnModalInstall = document.getElementById('btn-pwa-modal-install');
+  const isDesktop    = !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isIOS        = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+  // Sesuaikan teks banner berdasarkan platform
+  if (isDesktop) {
+    const iconEl  = document.getElementById('pwa-banner-icon');
+    const titleEl = document.getElementById('pwa-banner-title');
+    const subEl   = document.getElementById('pwa-banner-sub');
+    if (iconEl)  iconEl.textContent  = '💻';
+    if (titleEl) titleEl.textContent = 'Pasang DIS-NRW di Desktop / PC';
+    if (subEl)   subEl.textContent   = 'Buka dari Taskbar & Start Menu, bisa offline';
+  } else if (isIOS) {
+    // iOS: tampilkan banner panduan langsung karena iOS tidak support beforeinstallprompt
+    if (!isStandalone && pwaBanner) pwaBanner.style.display = 'flex';
+    const iconEl  = document.getElementById('pwa-banner-icon');
+    const titleEl = document.getElementById('pwa-banner-title');
+    const subEl   = document.getElementById('pwa-banner-sub');
+    if (iconEl)  iconEl.textContent  = '🍎';
+    if (titleEl) titleEl.textContent = 'Pasang DIS-NRW di iPhone/iPad';
+    if (subEl)   subEl.textContent   = 'Ketuk ⬆ Bagikan → Tambahkan ke Layar Utama';
+  }
+
+  // Daftarkan Service Worker v6
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => {
+          console.log('[PWA v6] ServiceWorker terdaftar:', reg.scope);
+          // Paksa update jika ada versi baru
+          reg.update();
+        })
+        .catch(err => console.warn('[PWA v6] ServiceWorker gagal:', err));
+    });
+  }
+
+  // Tangkap beforeinstallprompt (Chrome/Edge Android & Desktop)
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (!isStandalone && pwaBanner) {
+      pwaBanner.style.display = 'flex';
+    }
+    // Tampilkan tombol install di modal jika tersedia
+    if (btnModalInstall) btnModalInstall.style.display = 'block';
+  });
+
+  // ——— Tombol Install di Banner ———
+  if (btnInstall) {
+    btnInstall.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        // Native install prompt tersedia
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          if (pwaBanner) pwaBanner.style.display = 'none';
+        }
+        deferredPrompt = null;
+      } else {
+        // Tampilkan modal panduan manual
+        openPWAGuide();
+      }
+    });
+  }
+
+  // ——— Tombol Dismiss Banner ———
+  if (btnDismiss) {
+    btnDismiss.addEventListener('click', () => {
+      if (pwaBanner) pwaBanner.style.display = 'none';
+      // Ingat dismiss selama sesi ini
+      sessionStorage.setItem('pwa-banner-dismissed', '1');
+    });
+  }
+
+  // ——— Modal Guide — Buka ———
+  function openPWAGuide() {
+    if (!guideModal) return;
+    guideModal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    // Auto-select tab berdasarkan platform
+    const defaultTab = isIOS ? 'ios' : isDesktop ? 'desktop' : 'android';
+    switchPWATab(defaultTab);
+  }
+
+  // ——— Modal Guide — Tutup ———
+  function closePWAGuide() {
+    if (!guideModal) return;
+    guideModal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  if (btnModalClose) btnModalClose.addEventListener('click', closePWAGuide);
+  if (guideModal) guideModal.addEventListener('click', e => { if (e.target === guideModal) closePWAGuide(); });
+
+  // ——— Tombol Install di dalam Modal ———
+  if (btnModalInstall) {
+    btnModalInstall.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          closePWAGuide();
+          if (pwaBanner) pwaBanner.style.display = 'none';
+        }
+        deferredPrompt = null;
+      }
+    });
+  }
+
+  // ——— Tab Switching di Modal ———
+  function switchPWATab(tabName) {
+    document.querySelectorAll('.pwa-tab').forEach(btn => {
+      const isActive = btn.dataset.tab === tabName;
+      btn.classList.toggle('active', isActive);
+    });
+    document.querySelectorAll('.pwa-tab-content').forEach(el => {
+      el.style.display = 'none';
+    });
+    const activeContent = document.getElementById('pwa-tab-' + tabName);
+    if (activeContent) activeContent.style.display = 'block';
+    // Tampilkan/sembunyikan tombol install
+    if (btnModalInstall) {
+      btnModalInstall.style.display = (tabName !== 'ios' && deferredPrompt) ? 'block' : 'none';
+    }
+  }
+
+  document.querySelectorAll('.pwa-tab').forEach(btn => {
+    btn.addEventListener('click', () => switchPWATab(btn.dataset.tab));
+  });
+
+  // ——— Sembunyikan banner saat terpasang ———
+  window.addEventListener('appinstalled', () => {
+    if (pwaBanner) pwaBanner.style.display = 'none';
+    deferredPrompt = null;
+    console.log('[PWA v6] Aplikasi berhasil dipasang!');
+  });
+
+  // ——— Tanggal hari ini ———
+  const now  = new Date();
+  const opts = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+  document.getElementById('tanggal-hari-ini').textContent = new Intl.DateTimeFormat('id-ID', opts).format(now);
+
+  // ——— Animasi card masuk ———
+  const cards = document.querySelectorAll('.job-card');
+  cards.forEach((card, i) => {
+    card.style.opacity    = '0';
+    card.style.transform  = 'translateY(16px)';
+    card.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+    setTimeout(() => {
+      card.style.opacity   = '1';
+      card.style.transform = 'translateY(0)';
+    }, 80 + i * 60);
+  });
+</script>
+
+</body>
+</html>

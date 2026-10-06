@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Status Realtime — DIS-NRW</title>
+  <meta name="description" content="Monitoring cuaca, suhu, akurasi GPS dan internet secara realtime">
+  <meta name="theme-color" content="#005F8E">
+  <link rel="manifest" href="../assets/manifest.json">
+  <link rel="icon" href="../assets/icons/icon-192.png">
+  <link rel="stylesheet" href="../css/main.css">
+  <script src="../js/auth-guard.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      background: var(--surface);
+      color: var(--text1);
+      padding-bottom: 80px;
+    }
+
+    /* ── HEADER ── */
+    .page-header {
+      background: linear-gradient(135deg, #005F8E 0%, #00A6C7 100%);
+      color: white;
+      padding: 72px 20px 26px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .page-header::after {
+      content: '';
+      position: absolute; bottom: -20px; left: 0; right: 0;
+      height: 40px;
+      background: var(--surface);
+      border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    }
+    .page-header-icon { font-size: 48px; margin-bottom: 8px; }
+    .page-header-title { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; }
+    .page-header-sub { font-size: 12px; opacity: 0.85; margin-top: 4px; }
+
+    /* ── MAIN ── */
+    .status-content { padding: 16px; max-width: 620px; margin: 0 auto; }
+
+    /* ── LIVE BADGE ── */
+    .live-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: white; border: 1px solid var(--border);
+      border-radius: 50px; padding: 8px 16px;
+      font-size: 12px; font-weight: 600; color: var(--text2);
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .live-dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 0 0 rgba(16,185,129,0.4);
+      animation: pulse-green 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse-green {
+      0%   { box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
+      70%  { box-shadow: 0 0 0 8px rgba(16,185,129,0); }
+      100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+    }
+
+    /* ── STATUS CARDS GRID ── */
+    .status-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .status-card {
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: 18px;
+      padding: 18px 16px 16px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .status-card:active { transform: scale(0.97); }
+    .status-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 4px; border-radius: 18px 18px 0 0;
+    }
+    .card-weather::before { background: linear-gradient(90deg,#60A5FA,#3B82F6); }
+    .card-temp::before    { background: linear-gradient(90deg,#F97316,#EF4444); }
+    .card-gps::before     { background: linear-gradient(90deg,#10B981,#34D399); }
+    .card-net::before     { background: linear-gradient(90deg,#8B5CF6,#A78BFA); }
+
+    .card-icon-wrap {
+      width: 46px; height: 46px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; margin-bottom: 12px;
+    }
+    .card-weather .card-icon-wrap { background:#EFF6FF; }
+    .card-temp   .card-icon-wrap  { background:#FFF7ED; }
+    .card-gps    .card-icon-wrap  { background:#ECFDF5; }
+    .card-net    .card-icon-wrap  { background:#F5F3FF; }
+
+    .card-label {
+      font-size: 9px; font-weight: 800; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--text3);
+      margin-bottom: 4px;
+    }
+    .card-value {
+      font-size: 21px; font-weight: 800; line-height: 1.1;
+      color: var(--text1); margin-bottom: 2px;
+    }
+    .card-value-unit { font-size: 12px; font-weight: 500; color: var(--text3); }
+    .card-sub { font-size: 10px; color: var(--text3); margin-top: 6px; line-height: 1.4; }
+
+    .card-status-badge {
+      position: absolute; top: 14px; right: 12px;
+      font-size: 9px; font-weight: 700; letter-spacing: 0.4px;
+      padding: 3px 8px; border-radius: 50px;
+    }
+    .badge-ok   { background:#ECFDF5; color:#059669; }
+    .badge-warn { background:#FFFBEB; color:#D97706; }
+    .badge-err  { background:#FEF2F2; color:#DC2626; }
+    .badge-load { background:#F5F3FF; color:#7C3AED; }
+
+    /* ── SPINNER ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin {
+      display: inline-block; width: 12px; height: 12px;
+      border: 2px solid rgba(124,58,237,0.2);
+      border-top-color: #7C3AED; border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+    }
+
+    /* ── DETAIL PANELS ── */
+    .detail-panel {
+      background: white; border: 1.5px solid var(--border);
+      border-radius: 16px; padding: 18px; margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .detail-panel-title {
+      font-size: 11px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.8px; color: var(--text3); margin-bottom: 14px;
+    }
+    .detail-row {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 9px 0; border-bottom: 1px solid #F0F4F8;
+      font-size: 13px;
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-row-key { color: var(--text2); font-weight: 500; }
+    .detail-row-val { color: var(--text1); font-weight: 700; text-align: right; }
+
+    /* ── GAUGE ── */
+    .gauge-wrap { margin-top: 12px; }
+    .gauge-label-row {
+      display:flex; justify-content:space-between;
+      font-size:11px; color:var(--text3); margin-bottom:5px;
+    }
+    .gauge-track {
+      background: #F0F4F8; border-radius: 50px;
+      height: 7px; overflow: hidden;
+    }
+    .gauge-bar {
+      height: 100%; border-radius: 50px;
+      transition: width 0.9s cubic-bezier(.22,.61,.36,1);
+    }
+    .g-green  { background: linear-gradient(90deg,#10B981,#34D399); }
+    .g-yellow { background: linear-gradient(90deg,#F59E0B,#FBBF24); }
+    .g-red    { background: linear-gradient(90deg,#EF4444,#F87171); }
+    .g-blue   { background: linear-gradient(90deg,#3B82F6,#60A5FA); }
+    .g-purple { background: linear-gradient(90deg,#8B5CF6,#A78BFA); }
+
+    /* ── REFRESH ── */
+    .btn-refresh {
+      width: 100%; padding: 15px;
+      background: linear-gradient(135deg,#005F8E,#0084C8);
+      color: white; border: none; border-radius: var(--radius);
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 4px 16px rgba(0,95,142,0.3);
+      transition: opacity 0.18s; margin-bottom: 14px;
+    }
+    .btn-refresh:active { opacity: 0.8; }
+    .btn-refresh:disabled { opacity: 0.65; cursor: not-allowed; }
+
+    .last-update {
+      text-align: center; font-size: 11px; color: var(--text3);
+      padding-bottom: 8px;
+    }
+
+    @media (min-width: 640px) {
+      .status-grid { grid-template-columns: repeat(4,1fr); }
+    }
+    @media (min-width: 1024px) {
+      .page-header { padding-top: 88px; }
+      .status-content { max-width: 800px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="navbar-inner" style="display:flex;align-items:center;justify-content:space-around;width:100%;">
+    <a href="../index.html">
+      <span class="nav-icon">🏠</span> Beranda
+    </a>
+    <a href="tampildata.html">
+      <span class="nav-icon">📂</span> Riwayat
+    </a>
+    <a href="javascript:void(0)" onclick="logoutUser()">
+      <span class="nav-icon">🚪</span> Keluar
+    </a>
+  </div>
+</nav>
+
+<!-- HEADER -->
+<div class="page-header">
+  <div class="page-header-icon">📡</div>
+  <div class="page-header-title">Status Realtime</div>
+  <div class="page-header-sub">Cuaca · Suhu · GPS · Koneksi Internet</div>
+</div>
+
+<div class="status-content">
+
+  <div class="live-badge">
+    <div class="live-dot"></div>
+    <span id="live-label">Memuat data...</span>
+  </div>
+
+  <!-- 4 KARTU UTAMA -->
+  <div class="status-grid">
+
+    <div class="status-card card-weather">
+      <span class="card-status-badge badge-load" id="badge-weather"><span class="spin"></span></span>
+      <div class="card-icon-wrap" id="weather-icon-wrap">🌤️</div>
+      <div class="card-label">Cuaca</div>
+      <div class="card-value" id="val-cuaca" style="font-size:15px;">—</div>
+      <div class="card-sub" id="sub-cuaca">Memuat...</div>
+    </div>
+
+    <div class="status-card card-temp">
+      <span class="card-status-badge badge-load" id="badge-temp"><span class="spin"></span></span>
+      <div class="card-icon-wrap">🌡️</div>
+      <div class="card-label">Suhu</div>
+      <div class="card-value" id="val-suhu">—<span class="card-value-unit">°C</span></div>
+      <div class="card-sub" id="sub-suhu">Memuat...</div>
+    </div>
+
+    <div class="status-card card-gps">
+      <span class="card-status-badge badge-load" id="badge-gps"><span class="spin"></span></span>
+      <div class="card-icon-wrap">📍</div>
+      <div class="card-label">Akurasi GPS</div>
+      <div class="card-value" id="val-gps">—<span class="card-value-unit" id="gps-unit">m</span></div>
+      <div class="card-sub" id="sub-gps">Meminta izin...</div>
+    </div>
+
+    <div class="status-card card-net">
+      <span class="card-status-badge badge-load" id="badge-net"><span class="spin"></span></span>
+      <div class="card-icon-wrap">📶</div>
+      <div class="card-label">Internet</div>
+      <div class="card-value" id="val-net">—</div>
+      <div class="card-sub" id="sub-net">Mengukur...</div>
+    </div>
+
+  </div>
+
+  <!-- DETAIL GPS -->
+  <div class="detail-panel">
+    <div class="detail-panel-title">📍 Detail Lokasi GPS</div>
+    <div class="detail-row"><span class="detail-row-key">🌐 Lintang</span><span class="detail-row-val" id="d-lat">—</span></div>
+    <div class="detail-row"><span class="detail-row-key">🌐 Bujur</span><span class="detail-row-val" id="d-lng">—</span></div>
+    <div class="detail-row"><span class="detail-row-key">🎯 Akurasi Horizontal</span><span class="detail-row-val" id="d-acc">—</span></div>
+    <div class="detail-row"><span class="detail-row-key">⬆️ Ketinggian</span><span class="detail-row-val" id="d-alt">—</span></div>
+    <div class="detail-row"><span class="detail-row-key">🧭 Arah (Heading)</span><span class="detail-row-val" id="d-head">—</span></div>
+    <div class="detail-row"><span class="detail-row-key">🚀 Kecepatan Gerak</span><span class="detail-row-val" id="d-speed">—</span></div>
+    <div class="gauge-wrap">
+      <div class="gauge-label-row"><span>Kualitas Sinyal GPS</span><span id="d-gps-pct">—</span></div>
+      <div class="gauge-track"><div class="gauge-bar g-green" id="gauge-gps" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- DETAIL CUACA -->
+  <div class="detail-panel">
+    <div class="detail-panel-title">🌤️ Detail Cuaca &amp; Atmosfer</div>
+    <div class="detail-row"><span class="detail-row-key">🌡️ Suhu Terasa</span><span class="detail-row-val" id="d-feels">—</span></div>
+    <div class="detail-row"><span class="detail-row-key">💧 Kelembaban</span><span class="detail-row-val" id="d-humid">—</span></div>
+    <div class="detail-row"><span class="detail-row-key">💨 Kecepatan Angin</span><span class="detail-row-val" id="d-wind">—</span></div>
+    <div class="detail-row"><span class="detail-row-key">☁️ Tutupan Awan</span><span class="detail-row-val" id="d-cloud">—</span></div>
+    <div class="detail-row"><span class="detail-row-key">🌫️ Jarak Pandang</span><span class="detail-row-val" id="d-vis">—</span></div>
+    <div class="detail-row"><span class="detail-row-key">⬆️ Tekanan Udara</span><span class="detail-row-val" id="d-pres">—</span></div>
+    <div class="detail-row"><span class="detail-row-key">🌅 Matahari Terbit</span><span class="detail-row-val" id="d-sunrise">—</span></div>
+    <div class="detail-row"><span class="detail-row-key">🌇 Matahari Terbenam</span><span class="detail-row-val" id="d-sunset">—</span></div>
+    <div class="gauge-wrap">
+      <div class="gauge-label-row"><span>Kelembaban Udara</span><span id="d-humid-pct">—</span></div>
+      <div class="gauge-track"><div class="gauge-bar g-blue" id="gauge-humid" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- DETAIL INTERNET -->
+  <div class="detail-panel">
+    <div class="detail-panel-title">📶 Detail Koneksi Internet</div>
+    <div class="detail-row"><span class="detail-row-key">🌐 Status Koneksi</span><span class="detail-row-val" id="d-online">—</span></div>
+    <div class="detail-row"><span class="detail-row-key">📡 Jenis Jaringan</span><span class="detail-row-val" id="d-nettype">—</span></div>
+    <div class="detail-row"><span class="detail-row-key">⚡ Estimasi Kecepatan</span><span class="detail-row-val" id="d-speed-net">—</span></div>
+    <div class="detail-row"><span class="detail-row-key">📉 Latensi (Ping)</span><span class="detail-row-val" id="d-ping">—</span></div>
+    <div class="detail-row"><span class="detail-row-key">💾 Mode Hemat Data</span><span class="detail-row-val" id="d-saver">—</span></div>
+    <div class="gauge-wrap">
+      <div class="gauge-label-row"><span>Kualitas Koneksi</span><span id="d-net-pct">—</span></div>
+      <div class="gauge-track"><div class="gauge-bar g-purple" id="gauge-net" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <button class="btn-refresh" id="btn-refresh" onclick="startAllUpdates()">
+    🔄 Perbarui Semua Data
+  </button>
+  <div class="last-update" id="last-update">Belum pernah diperbarui</div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  STATUS REALTIME — DIS-NRW
+// ═══════════════════════════════════════════════════════
+let _gpsWatchId = null;
+let _pingTimer  = null;
+let _wxTimer    = null;
+let _wxFetched  = false;
+
+// ── Kode cuaca Open-Meteo → label
+const WX = {
+  0:  ['Cerah','☀️'],  1:  ['Hampir Cerah','🌤️'],  2:  ['Berawan Sebagian','⛅'],
+  3:  ['Mendung','☁️'], 45: ['Berkabut','🌫️'],      48: ['Embun Beku','🌫️'],
+  51: ['Gerimis Ringan','🌦️'], 53: ['Gerimis','🌦️'],   55: ['Gerimis Lebat','🌧️'],
+  61: ['Hujan Ringan','🌧️'],  63: ['Hujan Sedang','🌧️'], 65: ['Hujan Lebat','🌧️'],
+  71: ['Salju','❄️'],   73: ['Salju Sedang','❄️'],   75: ['Salju Lebat','❄️'],
+  80: ['Hujan Singkat','🌦️'], 81: ['Hujan Singkat','🌦️'], 82: ['Hujan Deras','⛈️'],
+  95: ['Petir & Hujan','⛈️'], 96: ['Petir + Hujan Es','⛈️'], 99: ['Hujan Es','⛈️']
+};
+
+function _(id) { return document.getElementById(id); }
+
+function setBadge(id, type, txt) {
+  const el = _(id); if (!el) return;
+  el.className = `card-status-badge badge-${type}`;
+  el.textContent = txt;
+}
+
+function setGauge(barId, pctId, pct, colorClass) {
+  const bar = _(barId); const lbl = _(pctId);
+  if (bar) { bar.className = `gauge-bar ${colorClass}`; bar.style.width = pct + '%'; }
+  if (lbl) lbl.textContent = pct + '%';
+}
+
+function updateClock() {
+  const now = new Date();
+  const t = now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const d = now.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const lv = _('live-label'); if (lv) lv.textContent = `Live — ${d}`;
+  const lu = _('last-update'); if (lu) lu.textContent = `Terakhir diperbarui: ${t}`;
+}
+
+// ══════════════════════════════════════════════════════
+//  CUACA — Open-Meteo (gratis, tanpa API key)
+// ══════════════════════════════════════════════════════
+async function fetchWeather(lat, lng) {
+  try {
+    const url = [
+      'https://api.open-meteo.com/v1/forecast',
+      `?latitude=${lat.toFixed(4)}&longitude=${lng.toFixed(4)}`,
+      '&current=temperature_2m,relative_humidity_2m,apparent_temperature,',
+      'weather_code,wind_speed_10m,surface_pressure,visibility,cloud_cover',
+      '&daily=sunrise,sunset&timezone=auto&forecast_days=1'
+    ].join('');
+
+    const res = await fetch(url);
+    const data = await res.json();
+    const c = data.current;
+    const dd = data.daily;
+
+    const [label, icon] = WX[c.weather_code] || [`Kode ${c.weather_code}`, '🌤️'];
+
+    _('val-cuaca').textContent = label;
+    _('sub-cuaca').textContent = `Angin ${c.wind_speed_10m} km/j · Kelembaban ${c.relative_humidity_2m}%`;
+    _('weather-icon-wrap').textContent = icon;
+    setBadge('badge-weather', 'ok', '✓ Live');
+
+    // Suhu
+    const t = Math.round(c.temperature_2m);
+    _('val-suhu').innerHTML = `${t} <span class="card-value-unit">°C</span>`;
+    _('sub-suhu').textContent = `Terasa ${Math.round(c.apparent_temperature)}°C`;
+    setBadge('badge-temp', t > 36 ? 'warn' : t < 15 ? 'warn' : 'ok',
+      t > 36 ? '🔥 Panas' : t < 15 ? '❄️ Dingin' : '✓ Normal');
+
+    // Detail cuaca
+    _('d-feels').textContent   = `${Math.round(c.apparent_temperature)} °C`;
+    _('d-humid').textContent   = `${c.relative_humidity_2m} %`;
+    _('d-wind').textContent    = `${c.wind_speed_10m} km/jam`;
+    _('d-cloud').textContent   = `${c.cloud_cover} %`;
+    _('d-vis').textContent     = c.visibility >= 1000
+      ? `${(c.visibility/1000).toFixed(1)} km` : `${c.visibility} m`;
+    _('d-pres').textContent    = `${c.surface_pressure} hPa`;
+
+    if (dd?.sunrise?.[0]) {
+      _('d-sunrise').textContent = new Date(dd.sunrise[0]).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+      _('d-sunset').textContent  = new Date(dd.sunset[0]).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+    }
+
+    const h = c.relative_humidity_2m;
+    setGauge('gauge-humid','d-humid-pct', Math.min(h,100),
+      h > 80 ? 'g-blue' : h > 50 ? 'g-green' : 'g-yellow');
+
+  } catch(e) {
+    _('val-cuaca').textContent = 'Gagal Muat';
+    _('sub-cuaca').textContent = 'Periksa koneksi internet';
+    setBadge('badge-weather','err','✗ Error');
+    setBadge('badge-temp','err','✗ Error');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  GPS — watchPosition untuk update realtime
+// ══════════════════════════════════════════════════════
+function startGPS() {
+  if (!navigator.geolocation) {
+    _('val-gps').textContent = 'N/A';
+    _('sub-gps').textContent = 'GPS tidak tersedia';
+    setBadge('badge-gps','err','✗ N/A');
+    return;
+  }
+  if (_gpsWatchId !== null) navigator.geolocation.clearWatch(_gpsWatchId);
+
+  _gpsWatchId = navigator.geolocation.watchPosition(pos => {
+    const { accuracy: acc, latitude: lat, longitude: lng,
+            altitude: alt, heading: head, speed: spd } = pos.coords;
+
+    // Format nilai GPS
+    let accStr = acc < 1 ? `${(acc*100).toFixed(0)} cm`
+               : acc < 1000 ? `${acc.toFixed(0)} m`
+               : `${(acc/1000).toFixed(2)} km`;
+
+    const valAcc = acc < 1000 ? acc.toFixed(0) : (acc/1000).toFixed(2);
+    const unitAcc = acc < 1000 ? 'm' : 'km';
+    _('val-gps').innerHTML = `${valAcc} <span class="card-value-unit">${unitAcc}</span>`;
+    _('sub-gps').textContent = `Akurasi ±${accStr}`;
+
+    let q, badgeT, badgeL;
+    if (acc <= 5)   { q=100; badgeT='ok';   badgeL='✓ Sangat Akurat'; }
+    else if(acc<=15){ q=85;  badgeT='ok';   badgeL='✓ Baik'; }
+    else if(acc<=30){ q=65;  badgeT='ok';   badgeL='↑ Cukup'; }
+    else if(acc<=100){ q=35; badgeT='warn'; badgeL='⚠ Rendah'; }
+    else            { q=10;  badgeT='err';  badgeL='✗ Buruk'; }
+
+    setBadge('badge-gps', badgeT, badgeL);
+
+    _('d-lat').textContent   = lat.toFixed(7) + '°';
+    _('d-lng').textContent   = lng.toFixed(7) + '°';
+    _('d-acc').textContent   = `±${accStr}`;
+    _('d-alt').textContent   = alt != null ? `${alt.toFixed(1)} m dpl` : '—';
+    _('d-head').textContent  = head != null ? `${head.toFixed(0)}°` : '—';
+    _('d-speed').textContent = spd  != null ? `${(spd*3.6).toFixed(1)} km/jam` : '—';
+
+    setGauge('gauge-gps','d-gps-pct', q,
+      q >= 65 ? 'g-green' : q >= 35 ? 'g-yellow' : 'g-red');
+
+    // Muat cuaca sekali setelah dapat koordinat
+    if (!_wxFetched) {
+      _wxFetched = true;
+      fetchWeather(lat, lng);
+      if (_wxTimer) clearInterval(_wxTimer);
+      _wxTimer = setInterval(() => fetchWeather(lat, lng), 5 * 60 * 1000);
+    }
+  }, err => {
+    const msg = {1:'Izin lokasi ditolak',2:'Sinyal GPS lemah',3:'Waktu habis'};
+    _('val-gps').textContent = 'Gagal';
+    _('sub-gps').textContent = msg[err.code] || 'GPS error';
+    setBadge('badge-gps','err','✗ Gagal');
+  }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 4000 });
+}
+
+// ══════════════════════════════════════════════════════
+//  INTERNET — ping + Network Information API
+// ══════════════════════════════════════════════════════
+async function checkInternet() {
+  const online = navigator.onLine;
+  const conn   = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+
+  let ping = null;
+  if (online) {
+    try {
+      const t0 = performance.now();
+      await fetch('https://www.google.com/generate_204',
+        { method:'HEAD', cache:'no-cache', mode:'no-cors' });
+      ping = Math.round(performance.now() - t0);
+    } catch(e) { ping = null; }
+  }
+
+  const typeMap = {
+    wifi:'📶 Wi-Fi', cellular:'📱 Seluler', ethernet:'🖥️ Ethernet',
+    bluetooth:'🔵 Bluetooth', none:'✗ Tidak Ada', unknown:'❓ Tidak Diketahui'
+  };
+  const etMap = {
+    'slow-2g':'2G Lambat (~50 kbps)', '2g':'2G (~250 kbps)',
+    '3g':'3G (~750 kbps)', '4g':'4G+ (>10 Mbps)'
+  };
+
+  let q = 0, qC = 'g-red', qL = 'Offline';
+  if (online && ping !== null) {
+    if      (ping < 50)   { q=100; qC='g-green';  qL='Sangat Baik'; }
+    else if (ping < 150)  { q=80;  qC='g-green';  qL='Baik'; }
+    else if (ping < 400)  { q=50;  qC='g-yellow'; qL='Cukup'; }
+    else if (ping < 1000) { q=25;  qC='g-red';    qL='Lambat'; }
+    else                  { q=10;  qC='g-red';    qL='Sangat Lambat'; }
+  }
+
+  _('val-net').textContent = ping !== null ? `${ping} ms` : (online ? 'Online' : 'Offline');
+  _('sub-net').textContent = ping !== null ? `Ping ${ping} ms · ${qL}` : (online ? 'Sedang diukur...' : 'Tidak ada koneksi');
+  setBadge('badge-net', online ? (q>=80?'ok':q>=50?'warn':'err') : 'err',
+    online ? (q>=80?'✓ Cepat':q>=50?'↑ Sedang':'⚠ Lambat') : '✗ Offline');
+
+  _('d-online').textContent    = online ? '🟢 Terhubung' : '🔴 Offline';
+  _('d-ping').textContent      = ping !== null ? `${ping} ms` : '—';
+  _('d-nettype').textContent   = conn ? (typeMap[conn.type] || conn.type || '—') : (online ? '—' : '—');
+  _('d-speed-net').textContent = conn?.effectiveType ? (etMap[conn.effectiveType] || conn.effectiveType) : '—';
+  _('d-saver').textContent     = conn?.saveData ? 'Ya (Hemat Data Aktif)' : 'Tidak';
+
+  setGauge('gauge-net','d-net-pct', q, qC);
+}
+
+// ══════════════════════════════════════════════════════
+//  START ALL
+// ══════════════════════════════════════════════════════
+async function startAllUpdates() {
+  const btn = _('btn-refresh');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Memuat ulang...'; }
+
+  _wxFetched = false;
+
+  // Reset badge ke loading
+  ['weather','temp','gps','net'].forEach(k => setBadge(`badge-${k}`,'load','...'));
+
+  startGPS();
+
+  await checkInternet();
+
+  if (_pingTimer) clearInterval(_pingTimer);
+  _pingTimer = setInterval(checkInternet, 30000); // refresh internet tiap 30 detik
+
+  updateClock();
+  if (btn) { btn.disabled = false; btn.innerHTML = '🔄 Perbarui Semua Data'; }
+}
+
+// ── Event online / offline
+window.addEventListener('online',  () => { checkInternet(); updateClock(); });
+window.addEventListener('offline', () => { checkInternet(); updateClock(); });
+
+// ── Boot
+window.addEventListener('DOMContentLoaded', () => {
+  startAllUpdates();
+  setInterval(updateClock, 10000);
+});
+</script>
+
+</body>
+</html>

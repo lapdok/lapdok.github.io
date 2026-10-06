@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Apel Pagi / Rapat / Upacara - DIS-NRW</title>
+  <meta name="theme-color" content="#005F8E">
+  <link rel="manifest" href="../assets/manifest.json">
+  <link rel="stylesheet" href="../css/main.css">
+  <script src="../js/auth-guard.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+  <script src="../js/image-compressor.js"></script>
+  <script src="../js/jarvis.js"></script>
+  <script src="../js/core.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner" style="display:flex; align-items:center; justify-content:space-around; width:100%;">
+    <a href="../index.html"><span class="nav-icon">🏠</span> Beranda</a>
+    <a href="form-apel.html" class="active"><span class="nav-icon">🎖️</span> Apel Pagi</a>
+    <a href="tampildata.html"><span class="nav-icon">📂</span> Riwayat</a>
+    <a href="javascript:void(0)" onclick="logoutUser()" title="Keluar Akun"><span class="nav-icon">🚪</span> Keluar</a>
+  </div>
+</nav>
+
+<div class="app-header" style="padding:18px 20px 16px;">
+  <div class="header-title" style="font-size:18px;">🎖️ Apel Pagi / Rapat / Upacara</div>
+  <div class="header-sub">1 Foto dokumentasi kehadiran</div>
+</div>
+
+<div id="edit-banner">⚠️ MODE EDIT — Perubahan akan menimpa data lama.
+  <button onclick="cancelEdit()" style="margin-top:6px;padding:5px 12px;cursor:pointer;border-radius:6px;border:none;background:rgba(255,255,255,0.25);color:white;font-weight:bold;">Batal Edit</button>
+</div>
+
+<div class="container">
+  <div id="job-container"></div>
+  <div class="actions">
+    <button class="btn-secondary" onclick="addNewJobItem()">＋ Tambah Entri Apel</button>
+    <button class="btn-primary" onclick="saveToHistory()">💾 Simpan ke Riwayat</button>
+  </div>
+</div>
+
+<!-- MAP MODAL -->
+<div id="map-modal" onclick="if(event.target===this) closeMap()">
+  <div class="map-modal-inner">
+    <div class="map-modal-header">
+      <div>
+        <div class="map-modal-title">📍 Tentukan Lokasi Manual</div>
+        <div class="map-modal-sub">Geser pin atau klik peta untuk menandai titik presisi</div>
+      </div>
+      <button type="button" class="btn-map-close" onclick="closeMap()" title="Tutup Peta">✖</button>
+    </div>
+    <div class="map-body-wrapper">
+      <div id="map-container"></div>
+      <div class="map-controls">
+        <button type="button" class="btn-locate" onclick="mapLocateMe()" title="Pusatkan ke Posisi GPS Saya">🎯</button>
+      </div>
+    </div>
+    <div class="map-footer">
+      <div class="map-status-box">
+        <span class="map-status" id="map-status">Klik peta untuk menandai lokasi</span>
+      </div>
+      <div class="map-footer-btns">
+        <button type="button" class="btn-map-cancel" onclick="closeMap()">Batal</button>
+        <button type="button" class="btn-map-confirm" onclick="confirmMapLocation()">✅ Pilih Lokasi</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CAMERA MODAL -->
+<div id="cam-modal">
+  <video id="cam-video" autoplay playsinline muted></video>
+  <div id="cam-overlay" style="display:none;">
+    <div class="wm-flex">
+      <div class="wm-time" id="wm-time"></div>
+      <div class="wm-line"></div>
+      <div class="wm-date-col">
+        <div class="wm-date" id="wm-date"></div>
+        <div class="wm-day" id="wm-day"></div>
+      </div>
+    </div>
+    <div class="wm-info" id="wm-gps"></div>
+    <div class="wm-info" id="wm-addr"></div>
+  </div>
+  <div class="cam-controls">
+    <button class="btn-cam-cancel" onclick="closeCamera()">✖ Batal</button>
+    <button class="btn-shutter" onclick="capturePhoto()"></button>
+    <button class="btn-cam-flip" onclick="flipCamera()">🔄</button>
+  </div>
+</div>
+
+<button id="btn-mute-toggle" onclick="Jarvis.toggleMute()">🔇 Matikan Suara</button>
+
+<script>
+let itemCount = 0;
+let editContextId = null;
+
+function addNewJobItem() {
+  itemCount++;
+  const container = document.getElementById('job-container');
+  const today = getTodayISODate();
+  const html = `
+    <div class="job-item" id="item-${itemCount}">
+      <div class="job-item-header">
+        <span>🎖️ Entri #${itemCount} — Apel Pagi/Rapat/Upacara</span>
+        <button class="btn-hapus-item" onclick="this.closest('.job-item').remove(); saveDraft();">Hapus</button>
+      </div>
+
+      <input type="hidden" id="date-${itemCount}" value="${today}">
+      <input type="hidden" id="gps-${itemCount}">
+      <div id="addr-${itemCount}" style="display:none;"></div>
+
+      <input type="hidden" id="officer-${itemCount}" value="">
+      <div class="input-group">
+        <label class="input-label">👤 Petugas Bertugas</label>
+        <div style="padding:10px 14px; background:var(--surface2); border:1.5px solid var(--border); border-radius:10px; font-size:13px; font-weight:600; color:var(--primary); display:flex; align-items:center; gap:8px;">
+          <span style="font-size:18px;">👤</span>
+          <span id="officer-display-${itemCount}">Memuat nama...</span>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">📸 Foto Selfie / Barisan Apel (1 Foto)</label>
+        <div class="photo-grid-header grid-1" style="grid-template-columns:1fr;">
+          <div>FOTO APEL</div>
+        </div>
+        <div class="photo-grid-body grid-1" style="grid-template-columns:1fr;padding:10px;">
+          <div class="photo-col" style="border:none;">
+            <div class="photo-actions">
+              <button class="btn-photo" onclick="openCamera('p1-${itemCount}','gps-${itemCount}','addr-${itemCount}',() => saveDraft())">📷 Kamera</button>
+              <button class="btn-photo" onclick="document.getElementById('gal-${itemCount}').click()">📁 Galeri</button>
+            </div>
+            <input type="file" id="gal-${itemCount}" accept="image/*" style="display:none" onchange="processGalleryFile(this.files[0],'p1-${itemCount}','gps-${itemCount}','addr-${itemCount}',saveDraft)">
+            <div class="photo-preview" id="p1-${itemCount}"><span class="empty-icon">🤳</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">📝 Keterangan Kegiatan</label>
+        <textarea class="form-input form-textarea" id="ta-${itemCount}" placeholder="Keterangan kehadiran apel / rapat / upacara..." oninput="saveDraft()"></textarea>
+      </div>
+
+    </div>`;
+  container.insertAdjacentHTML('beforeend', html);
+  // Auto-isi nama petugas dari sesi login
+  const dispElA = document.getElementById(`officer-display-${itemCount}`);
+  const hidElA = document.getElementById(`officer-${itemCount}`);
+  const loggedNameA = getLoggedInName();
+  if (dispElA) dispElA.textContent = loggedNameA;
+  if (hidElA) hidElA.value = loggedNameA;
+  Jarvis.pandu('foto_apel');
+}
+
+function onDateChange(id) {
+  const val = document.getElementById(`date-${id}`).value;
+  document.getElementById(`date-lbl-${id}`).textContent = formatIndoDate(val);
+  saveDraft();
+  Jarvis.pandu('lokasi');
+}
+
+function onLocationConfirmed() { Jarvis.pandu('foto_apel'); }
+
+function extractPhotoData(elId) {
+  const el = document.getElementById(elId);
+  if (!el) return null;
+  const img = el.querySelector('img')?.src;
+  if (!img) return null;
+  return {
+    img: img,
+    gps: el.dataset.gps || '',
+    addr: el.dataset.addr || '',
+    lat: el.dataset.lat ? parseFloat(el.dataset.lat) : null,
+    lng: el.dataset.lng ? parseFloat(el.dataset.lng) : null,
+    elevation: el.dataset.elevation ? parseFloat(el.dataset.elevation) : null,
+    mapsUrl: el.dataset.mapsUrl || ''
+  };
+}
+
+async function saveDraft() {
+  const items = [];
+  document.querySelectorAll('.job-item').forEach(item => {
+    const id = item.id.split('-')[1];
+    const dateVal = document.getElementById(`date-${id}`)?.value || getTodayISODate();
+    const officerElA = document.getElementById(`officer-${id}`);
+    if (officerElA && !officerElA.value) officerElA.value = getLoggedInName();
+    items.push({
+      type: 'apel',
+      workDate: dateVal,
+      officer: officerElA?.value || getLoggedInName(),
+      gps: document.getElementById(`gps-${id}`)?.value || '',
+      addr: document.getElementById(`addr-${id}`)?.innerText || '',
+      p1: extractPhotoData(`p1-${id}`),
+      desc: document.getElementById(`ta-${id}`)?.value || ''
+    });
+  });
+  await localforage.setItem(SAPDI_KEYS.DRAFT, items);
+  return items;
+}
+
+async function loadDraft() {
+  editContextId = await localforage.getItem(SAPDI_KEYS.EDIT_ID);
+  if (editContextId) document.getElementById('edit-banner').style.display = 'block';
+  const saved = await localforage.getItem(SAPDI_KEYS.DRAFT);
+  if (!saved || !saved.length || saved[0].type !== 'apel') { addNewJobItem(); return; }
+  saved.forEach((data, idx) => {
+    addNewJobItem();
+    const id = idx + 1;
+    if (document.getElementById(`date-${id}`)) document.getElementById(`date-${id}`).value = data.workDate || getTodayISODate();
+    const officerNameA = data.officer || getLoggedInName();
+    if (document.getElementById(`officer-${id}`)) document.getElementById(`officer-${id}`).value = officerNameA;
+    if (document.getElementById(`officer-display-${id}`)) document.getElementById(`officer-display-${id}`).textContent = officerNameA;
+    if (document.getElementById(`gps-${id}`)) document.getElementById(`gps-${id}`).value = data.gps || '';
+    if (document.getElementById(`addr-${id}`)) document.getElementById(`addr-${id}`).innerText = data.addr || '';
+    if (document.getElementById(`ta-${id}`)) document.getElementById(`ta-${id}`).value = data.desc || '';
+    if (data.p1) {
+      const pEl = document.getElementById(`p1-${id}`);
+      if (pEl) {
+        const src = typeof data.p1 === 'object' ? data.p1.img : data.p1;
+        pEl.innerHTML = `<img src="${src}">`;
+        pEl.classList.add('has-photo');
+        if (typeof data.p1 === 'object') {
+          if (data.p1.gps) pEl.dataset.gps = data.p1.gps;
+          if (data.p1.addr) pEl.dataset.addr = data.p1.addr;
+          if (data.p1.lat) pEl.dataset.lat = data.p1.lat;
+          if (data.p1.lng) pEl.dataset.lng = data.p1.lng;
+          if (data.p1.elevation !== null && data.p1.elevation !== undefined) pEl.dataset.elevation = data.p1.elevation;
+          if (data.p1.mapsUrl) pEl.dataset.mapsUrl = data.p1.mapsUrl;
+        }
+      }
+    }
+  });
+}
+
+async function saveToHistory() {
+  const items = await saveDraft();
+  if (!items || !items.length) { showToast('⚠️ Tambahkan data pekerjaan terlebih dahulu!', 3000); return; }
+  let history = await localforage.getItem(SAPDI_KEYS.HISTORY) || [];
+  if (!Array.isArray(history)) history = [];
+  if (editContextId) history = history.filter(h => h.id !== parseFloat(editContextId));
+  const workDate = items[0].workDate || getTodayISODate();
+  history.push({ id: Date.now(), type: 'apel', typeLabel: 'Apel Pagi/Rapat/Upacara', date: workDate, timestamp: formatIndoDate(workDate), data: items });
+  await localforage.setItem(SAPDI_KEYS.HISTORY, history);
+  await localforage.removeItem(SAPDI_KEYS.DRAFT);
+  await localforage.removeItem(SAPDI_KEYS.EDIT_ID);
+  Jarvis.pandu('selesai');
+  showToast('✅ Laporan berhasil disimpan!');
+  setTimeout(() => location.href = 'tampildata.html', 1200);
+}
+
+async function cancelEdit() {
+  await localforage.removeItem(SAPDI_KEYS.DRAFT);
+  await localforage.removeItem(SAPDI_KEYS.EDIT_ID);
+  location.reload();
+}
+
+window.onload = () => loadDraft();
+</script>
+</body>
+</html>

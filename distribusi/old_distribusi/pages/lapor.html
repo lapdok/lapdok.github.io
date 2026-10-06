@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <link rel="icon" type="image/png" href="../assets/icons/icon-512.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lapor Pekerjaan - Tim Distribusi</title>
+    <link rel="manifest" href="../manifest.json">
+    <meta name="theme-color" content="#5d87ff">
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2642522351768171"
+     crossorigin="anonymous"></script>
+    <style>
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; background-color: #f0f2f5; color: #333; font-size: 11px; padding-bottom: 60px;}
+        .navbar { display: flex; justify-content: space-around; background: #5d87ff; padding: 12px 0; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .navbar a { color: white; text-decoration: none; font-weight: bold; font-size: 13px; opacity: 0.7; padding: 0 10px; }
+        .navbar a.active { opacity: 1; border-bottom: 2px solid #fff; }
+        .container { width: 100%; max-width: 900px; margin: auto; padding: 15px; }
+
+        #edit-banner { display: none; background: #e67e22; color: white; padding: 12px; border-radius: 6px; margin-bottom: 15px; text-align: center; font-weight: bold; }
+
+        .info-header { background: #5d87ff; color: white; padding: 12px 15px; border-radius: 8px 8px 0 0; display: flex; align-items: center; gap: 10px; }
+        .info-body { background: white; padding: 15px; border-radius: 0 0 8px 8px; margin-bottom: 20px; border: 1px solid #e0e0e0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .tupoksi-title { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; display: block; }
+        .tupoksi-val { font-size: 14px; font-weight: 700; color: #333; display: block; }
+
+        .job-item { background: white; border: 1px solid #d1d8dd; border-radius: 8px; margin-bottom: 25px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.08); }
+        .header-main { padding: 10px 15px; background: #5d87ff; color: #fff; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        
+        .date-section { padding: 12px; background: #f9f9f9; border-bottom: 1px solid #f0f0f0; }
+        .date-input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+
+        .grid-header { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; background: #ecf0f1; font-size: 9px; font-weight: bold; padding: 5px 0; }
+        .grid-content { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+        .column { padding: 10px 5px; border-right: 1px solid #eee; display: flex; flex-direction: column; align-items: center; }
+        .image-preview { width: 100%; aspect-ratio: 1/1; border: 2px dashed #ddd; border-radius: 4px; display: flex; justify-content: center; align-items: center; background: #fafafa; overflow: hidden; margin-top: 5px; }
+        .image-preview img { width: 100%; height: 100%; object-fit: contain; }
+        
+        .btn-photo { padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; background: white; }
+        .photo-actions { display: flex; gap: 4px; margin-bottom: 8px; }
+
+        .footer-section { padding: 12px; }
+        .footer-section select, .footer-section textarea { width: 100%; padding: 10px; border: 1px solid #ccc; font-size: 11px; border-radius: 4px; margin-bottom: 10px; font-family: inherit; }
+
+        .actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+        .btn-add { background: #5d87ff; color: white; padding: 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-save { background: #27ae60; color: white; padding: 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+
+        #cam-modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: #000; }
+        #cam-video { width: 100%; height: 100%; object-fit: cover; }
+        .cam-controls { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: space-around; align-items: center; }
+        .btn-shutter { width: 75px; height: 75px; background: white; border-radius: 50%; border: 6px solid #ccc; }
+        #cam-status { position: absolute; top: 20px; width: 100%; text-align: center; color: white; font-size: 12px; text-shadow: 1px 1px 2px #000; padding: 0 20px; }
+
+        .btn-mute-float {
+            position: fixed;
+            bottom: 45px; /* Lower than before, above slim footer */
+            right: 20px;
+            z-index: 1001;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: none;
+            background: #5d87ff;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            font-size: 18px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .btn-mute-float.muted {
+            background: #94a3b8;
+        }
+
+        .developer-info {
+            font-size: 10px;
+            color: white;
+            text-align: center;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            padding: 8px;
+        }
+        .sticky-footer-slim {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #5d87ff;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="../index.html">🏠 Dashboard</a>
+    <a href="tampildata.html" class="active">📂 Riwayat</a>
+    <a href="info.html">ℹ️ Info App</a>
+</nav>
+
+<div class="container">
+    <div id="edit-banner">
+        ⚠️ MODE EDIT AKTIF <br>
+        <button onclick="cancelEdit()" style="margin-top:5px; padding:5px; cursor:pointer; border:none; border-radius:4px;">Batal & Buat Baru</button>
+    </div>
+
+    <div class="info-header">
+        <span style="font-size: 18px;">📋</span>
+        <div style="font-weight: bold; font-size: 15px;">Informasi Tugas</div>
+    </div>
+    <div class="info-body">
+        <span class="tupoksi-title">Tupoksi :</span>
+        <span class="tupoksi-val">Melaksanakan tugas sesuai dengan SOP</span>
+    </div>
+
+    <!-- Header Ad -->
+    <div style="margin-bottom: 20px; min-height: 90px; display: flex; flex-direction: column; align-items: center;">
+        <span class="ad-label">Advertisement</span>
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-2642522351768171"
+             data-ad-slot="7918954512"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>
+             (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+    </div>
+
+    <div id="job-container"></div>
+
+    <!-- Inline Footer Ad (End of Jobs) -->
+    <div style="margin-top: 25px; margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; border-top: 1px dashed #ced4da; padding-top: 20px;">
+        <span class="ad-label" style="font-size: 8px; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px;">Advertisement</span>
+        <ins class="adsbygoogle"
+             style="display:inline-block;width:320px;height:50px"
+             data-ad-client="ca-pub-2642522351768171"
+             data-ad-slot="7918954512"></ins>
+        <script>
+             (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+    </div>
+
+    <div class="actions">
+        <button class="btn-add" onclick="addNewJobItem()">+ Tambah Item Pekerjaan</button>
+        <button class="btn-save" onclick="saveToHistory()">💾 Simpan & Perbarui</button>
+    </div>
+</div>
+
+<button id="jarvis-mute-toggle" class="btn-mute-float" onclick="toggleJarvisMute()">🔊</button>
+
+<div id="cam-modal">
+    <div id="cam-status">🛰️ Mencari GPS...</div>
+    <video id="cam-video" autoplay playsinline muted></video>
+    <div class="cam-controls">
+        <button onclick="closeCamera()" style="color:white; background:none; border:none; font-weight:bold;">BATAL</button>
+        <button class="btn-shutter" id="shutter-btn" onclick="capturePhotoWithWatermark()" disabled></button>
+        <div style="width:50px;"></div>
+    </div>
+</div>
+
+<script src="../assets/js/jarvis.js"></script>
+<script>
+    let itemCount = 0, cameraStream = null, activePreviewId = null;
+    let currentGPS = { lat: 0, lng: 0, addr: "Mencari alamat..." };
+    let editContextId = localStorage.getItem('lapdok_edit_context') || null;
+    // SELURUH DATA PEKERJAAN BERDASARKAN INPUT USER
+    const jobData = {
+        "0": {
+            tupoksi: "Tugas Lain-lain Perusahaan",
+            indikators: [
+                "Mengangkat peralatan mesin seperti pompa, peralatan kelistrikan, dan generator set (pegawai Laki-laki)",
+                "Membendung sungai di musim kemarau (pegawai Laki-laki)",
+                "Penggantian Meter Air pelanggan yang tidak normal secara massal (pegawai Laki-laki)",
+                "Pemasangan SR baru secara massal apabila sedang banyak permintaan (pegawai Laki-laki)",
+                "Rehabilitasi IPA, Intake dan Jaringan Perpipaan yang terkena longsor atau pekerjaan urgensi lainnya",
+                "Pekerjaan konstruksi, bangunan, dll (pegawai Laki-laki)",
+                "Hal-hal teknis kegiatan/pekerjaan Perusahaan atau Pemda (pegawai Laki-laki)",
+                "Penagihan untuk menekan piutang (pegawai perempuan)",
+                "Pencarian Pendaftaran SR baru untuk pemenuhan target perusahaan atas pertumbuhan pelanggan dan perluasan cakupan pelayanan (pegawai Perempuan)",
+                "Acara pameran (semua Pegawai)",
+                "Pengawasan sambungan ilegal/pencurian air (semua pegawai)",
+                "Mewakili perusahaan pada acara seni, budaya, dan olahraga (semua pegawai)",
+                "Mewakili perusahaan pada acara keagamaan (semua pegawai)",
+                "Penugasan menyetir kendaraan untuk mengganti sopir direktur, mobil tangki, dll yang sedang cuti/sakit/resign",
+                "Penugasan tugas lainnya berkaitan dengan operasional perusahaan"
+            ]
+        },
+        "1": {
+            tupoksi: "Penanganan Aduan Pelanggan melalui SIMPEL & Website sesuai SOP",
+            indikators: [
+                "Melaksanakan penanganan aduan berdasarkan data dari SIMPEL",
+                "Proaktif memberi saran/solusi kepada pelanggan untuk bekerjasama melaksanakan saran agar masalah/kendala yang dikeluhkan terselesaikan secara permanen",
+                "Dapat menugaskan diri sendiri atas aduan yang langsung diterima dengan menginput melalui menu pengaduan di website perusahaan"
+            ]
+        },
+        "2": {
+            tupoksi: "Melaksanakan Tupoksi sesuai dengan SOP",
+            indikators: [
+                "Membuat dan mengatur dan distribusi air keseluruh wilayah pelayanan yang telah ditetapkan",
+                "Melaksanakan distribusi air ke pelanggan secara merata dan kontinu sesuai jadwal yang telah ditentukan",
+                "Mengatur dan menyelenggarakan fungsi-fungsi valve (buka-tutup), air valve (pembuangan tekanan udara dalam pip) dan wash out (pengurasan) pada jaringan pipa transmisi dan distribusi",
+                "Melaksanakan perbaikan kebocoran pipa distribusi, jaringan sambungan rumah, dan instalasi meteran"
+            ]
+        },
+        "3": {
+            tupoksi: "Melaksanakan koordinasi dengan Sub Bidang Produksi & Sub Bidang Pengaduan",
+            indikators: [
+                "Melaksanakan koordinasi dengan Sub Bidang Produksi untuk kelancaran suplai air dan pelayanan",
+                "Menindaklanjuti aduan pelanggan dari Bidang Hubungan Langganan melalui SIMPEL"
+            ]
+        },
+        "4": {
+            tupoksi: "Melaksanakan tugas lain dari atasan",
+            indikators: [
+                "Membantu pengangkatan Pompa Air baku, Pompa Transfer/Distribusi, Pompa Booster, Pompa Dosing",
+                "Membantu mengangkat material teknik atau permesinan yang berat",
+                "Membantu tim produksi pembersihan sumbatan intake/sumur",
+                "Membantu pada material berat kelistrikan",
+                "Membantu penanganan pekerjaan darurat atau pekerjaan yang membutuhkan kecepatan",
+                "Membantu membendung sungai di musim kemarau",
+                "Membantu pekerjaan keahlian seperti pengelasan dan pengoperasian mesin",
+                "Tugas perusahaan lainnya yang membutuhkan banyak tenaga"
+            ]
+        }
+    };
+
+    // Deteksi ID dari URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentJobId = urlParams.get('id') || "0";
+    const currentJob = jobData[currentJobId] || jobData["0"];
+
+    function refreshItemLabels() {
+        const items = document.querySelectorAll('.job-item');
+        items.forEach((item, index) => {
+            const label = item.querySelector('.header-main span');
+            if (label) label.innerText = `ITEM #${index + 1}`;
+        });
+        saveDraft();
+    }
+
+    function toggleJarvisMute() {
+        const isMuted = Jarvis.toggleMute();
+        const btn = document.getElementById('jarvis-mute-toggle');
+        btn.innerText = isMuted ? "🔇" : "🔊";
+        btn.classList.toggle('muted', isMuted);
+    }
+
+    function addNewJobItem(suppressVoice = false) {
+        itemCount++;
+        const container = document.getElementById('job-container');
+        const html = `
+            <div class="job-item" id="item-${itemCount}">
+                <div class="header-main">
+                    <span>ITEM #0</span>
+                    <button onclick="this.closest('.job-item').remove(); refreshItemLabels();" style="background:none; border:1px solid white; color:white; font-size:9px; border-radius:3px;">Hapus</button>
+                </div>
+                <div class="date-section">
+                    <input type="date" class="date-input" id="date-in-${itemCount}" onchange="saveDraft(); if(this.value) Jarvis.say('Tanggal set. Foto sebelum?')" onfocus="Jarvis.say('Pilih tanggal.')">
+                </div>
+                <div class="grid-header"><div>SEBELUM</div><div>PROSES</div><div>SESUDAH</div></div>
+                <div class="grid-content">
+                    ${[1,2,3].map(i => `
+                        <div class="column">
+                            <div class="photo-actions">
+                                <button class="btn-photo" onclick="openCustomCamera('p${i}-${itemCount}')">📷</button>
+                                <button class="btn-photo" onclick="document.getElementById('gal-${i}-${itemCount}').click()">📁</button>
+                            </div>
+                            <input type="file" id="gal-${i}-${itemCount}" accept="image/*" style="display:none" onchange="processGalleryImg(this, 'p${i}-${itemCount}')">
+                            <div class="image-preview" id="p${i}-${itemCount}"><span>Preview</span></div>
+                        </div>`).join('')}
+                </div>
+                <div class="footer-section">
+                    <select id="sel-${itemCount}" onchange="saveDraft(); if(this.value) Jarvis.say('Indikator set. Ada keterangan?')" onfocus="Jarvis.say('Pilih indikator.')">
+                        <option value="">-- Pilih Jenis Pekerjaan --</option>
+                        ${currentJob.indicators ? currentJob.indicators.map(o => `<option value="${o}">${o}</option>`).join('') : currentJob.indikators.map(o => `<option value="${o}">${o}</option>`).join('')}
+                    </select>
+                    <textarea id="ta-${itemCount}" oninput="saveDraft()" onblur="if(this.value) Jarvis.say('Siap. Klik simpan.')" onfocus="Jarvis.say('Isi keterangan.')" placeholder="Tambahkan keterangan tambahan jika diperlukan..."></textarea>
+                </div>
+            </div>`;
+        container.insertAdjacentHTML('beforeend', html);
+        refreshItemLabels();
+        
+        if (!suppressVoice && sessionStorage.getItem('jarvis_activated') === 'true') {
+            const currentCount = document.querySelectorAll('.job-item').length;
+            Jarvis.say(`Item ${currentCount}.`);
+        }
+    }
+
+    async function getAddress(lat, lng) {
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+            const data = await res.json();
+            currentGPS.addr = data.display_name;
+        } catch(e) { 
+            currentGPS.addr = `Koordinat: ${lat.toFixed(6)}, ${lng.toFixed(6)}`; 
+        }
+    }
+
+    function getGPSLocation() {
+        if (!("geolocation" in navigator)) return;
+        
+        // Ambil dari cache jika ada
+        const lat = sessionStorage.getItem('last_lat');
+        const lng = sessionStorage.getItem('last_lng');
+        const addr = sessionStorage.getItem('last_addr');
+        if (lat && lng) {
+            currentGPS.lat = parseFloat(lat);
+            currentGPS.lng = parseFloat(lng);
+            if (addr) currentGPS.addr = addr; 
+            else getAddress(currentGPS.lat, currentGPS.lng); // Cari jika alamat belum ada di cache
+
+            const statusEl = document.getElementById('cam-status');
+            if (statusEl) {
+                statusEl.innerText = "📍 GPS Terkunci";
+                document.getElementById('shutter-btn').disabled = false;
+            }
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+            currentGPS.lat = pos.coords.latitude; 
+            currentGPS.lng = pos.coords.longitude;
+            sessionStorage.setItem('last_lat', currentGPS.lat);
+            sessionStorage.setItem('last_lng', currentGPS.lng);
+            
+            await getAddress(currentGPS.lat, currentGPS.lng);
+            
+            const statusEl = document.getElementById('cam-status');
+            if (statusEl) {
+                statusEl.innerText = "📍 GPS Terkunci";
+                document.getElementById('shutter-btn').disabled = false;
+            }
+        }, (err) => {
+            console.error("GPS Error:", err);
+        }, { enableHighAccuracy: true, timeout: 5000 });
+    }
+
+    async function preWarmCamera() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+        try {
+            // Minta ijin sekali di awal sesi dan simpan stream-nya
+            if (!cameraStream) {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                console.log("Kamera di-prewarm: Stream disimpan secara persistent");
+            }
+        } catch (e) {
+            console.log("Pre-warm kamera gagal:", e);
+        }
+    }
+
+    async function openCustomCamera(p) { 
+        activePreviewId = p; 
+        document.getElementById('cam-modal').style.display = 'block';
+        
+        const video = document.getElementById('cam-video');
+        try {
+            if (!cameraStream) {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            }
+            video.srcObject = cameraStream;
+            video.play();
+        } catch (e) {
+            alert("Gagal mengakses kamera: " + e);
+        }
+
+        if (currentGPS.lat !== 0) {
+            document.getElementById('cam-status').innerText = "📍 GPS Terkunci";
+            document.getElementById('shutter-btn').disabled = false;
+        } else {
+            document.getElementById('cam-status').innerText = "🛰️ Mencari GPS... Mohon tunggu.";
+            document.getElementById('shutter-btn').disabled = true;
+            getGPSLocation();
+        }
+    }
+
+    async function capturePhotoWithWatermark() {
+        const video = document.getElementById('cam-video');
+        const canvas = document.createElement('canvas');
+        canvas.width = 1080; canvas.height = 1080;
+        const ctx = canvas.getContext('2d');
+
+        const size = Math.min(video.videoWidth, video.videoHeight);
+        ctx.drawImage(video, (video.videoWidth - size) / 2, (video.videoHeight - size) / 2, size, size, 0, 0, 1080, 1080);
+
+        // Map Satelit (l=sat,skl)
+        const mapUrl = `https://static-maps.yandex.ru/1.x/?ll=${currentGPS.lng},${currentGPS.lat}&z=16&l=sat,skl&size=450,450&pt=${currentGPS.lng},${currentGPS.lat},pm2rdm`;
+        const mapImg = new Image();
+        mapImg.crossOrigin = "anonymous";
+        mapImg.src = mapUrl;
+        
+        await new Promise(r => mapImg.onload = r);
+        
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 10;
+        ctx.strokeRect(30, 30, 260, 260);
+        ctx.drawImage(mapImg, 35, 35, 250, 250);
+
+        const grad = ctx.createLinearGradient(0, 780, 0, 1080);
+        grad.addColorStop(0, "rgba(0,0,0,0)");
+        grad.addColorStop(1, "rgba(0,0,0,0.95)");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 780, 1080, 300);
+
+        const now = new Date();
+        const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+        const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+        const dayStr = now.toLocaleDateString('id-ID', { weekday: 'long' });
+
+        ctx.shadowColor = "rgba(0,0,0,0.8)";
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = "#5d87ff";
+        ctx.font = "bold 38px Arial";
+        ctx.fillText("TIM DISTRIBUSI", 50, 830);
+        ctx.fillStyle = "white";
+        ctx.font = "bold 125px Arial";
+        ctx.fillText(timeStr, 50, 935);
+        ctx.font = "bold 38px Arial";
+        ctx.fillText(dateStr, 385, 885);
+        ctx.font = "34px Arial";
+        ctx.fillText(dayStr, 385, 930);
+        ctx.font = "bold 24px Arial";
+        ctx.fillText(`Lat: ${currentGPS.lat.toFixed(6)}  |  Lng: ${currentGPS.lng.toFixed(6)}`, 385, 965);
+        ctx.font = "24px Arial";
+        
+        let words = currentGPS.addr.split(' '), line = '', y = 985;
+        for(let n=0; n<words.length; n++){
+            let testLine = line + words[n] + ' ';
+            if(ctx.measureText(testLine).width > 980){ ctx.fillText(line, 50, y); line = words[n] + ' '; y += 35; }
+            else { line = testLine; }
+        }
+        ctx.fillText(line, 50, y);
+
+        document.getElementById(activePreviewId).innerHTML = `<img src="${canvas.toDataURL('image/jpeg', 0.8)}">`;
+        
+        // Sequential voice guidance for photos
+        if (activePreviewId.startsWith('p1')) Jarvis.say("Sebelum OK. Foto PROSES?");
+        else if (activePreviewId.startsWith('p2')) Jarvis.say("Proses OK. Foto SESUDAH?");
+        else if (activePreviewId.startsWith('p3')) Jarvis.say("Foto lengkap. Pilih indikator.");
+        else Jarvis.say("Foto OK.");
+
+        saveDraft(); closeCamera();
+    }
+
+    function processGalleryImg(input, p) {
+        const file = input.files[0]; if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const c = document.createElement('canvas'); c.width = 1080; c.height = 1080;
+                const ctx = c.getContext('2d');
+                const scale = Math.max(c.width / img.width, c.height / img.height);
+                const x = (c.width / 2) - (img.width / 2) * scale;
+                const y = (c.height / 2) - (img.height / 2) * scale;
+                ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                document.getElementById(p).innerHTML = `<img src="${c.toDataURL('image/jpeg', 0.8)}">`;
+                
+                // Sequential voice guidance for photos (Gallery)
+                if (p.startsWith('p1')) Jarvis.say("Sebelum OK. Foto PROSES?");
+                else if (p.startsWith('p2')) Jarvis.say("Proses OK. Foto SESUDAH?");
+                else if (p.startsWith('p3')) Jarvis.say("Foto lengkap. Pilih indikator.");
+                
+                saveDraft();
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function closeCamera() { 
+        const video = document.getElementById('cam-video');
+        video.srcObject = null; // Detach saja agar ijin tidak lepas
+        document.getElementById('cam-modal').style.display = 'none'; 
+    }
+
+    function stopCameraStream() {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(t => t.stop());
+            cameraStream = null;
+        }
+    }
+
+    function saveDraft() {
+        const items = [];
+        document.querySelectorAll('.job-item').forEach(item => {
+            const id = item.id.split('-')[1];
+            items.push({
+                workDate: document.getElementById(`date-in-${id}`).value,
+                p1: document.getElementById(`p1-${id}`).querySelector('img')?.src || null,
+                p2: document.getElementById(`p2-${id}`).querySelector('img')?.src || null,
+                p3: document.getElementById(`p3-${id}`).querySelector('img')?.src || null,
+                indikator: document.getElementById(`sel-${id}`).value,
+                desc: document.getElementById(`ta-${id}`).value
+            });
+        });
+        localStorage.setItem('lapdok_draft', JSON.stringify({ jobId: currentJobId, items }));
+    }
+
+    function saveToHistory() {
+        const draft = JSON.parse(localStorage.getItem('lapdok_draft') || '{}');
+        const items = draft.items || [];
+        
+        if(!items.length || !items[0].workDate) return alert("Pilih Tanggal Pekerjaan!");
+        
+        let history = JSON.parse(localStorage.getItem('lapdok_history') || '[]');
+        if(editContextId) history = history.filter(h => h.id !== parseFloat(editContextId));
+        
+        history.push({ 
+            id: Date.now(), 
+            timestamp: items[0].workDate, 
+            data: draft // Simpan seluruh objek draf (termasuk jobId)
+        });
+        
+        localStorage.setItem('lapdok_history', JSON.stringify(history));
+        localStorage.removeItem('lapdok_draft'); 
+        localStorage.removeItem('lapdok_edit_context');
+        stopCameraStream(); // Matikan kamera setelah selesai
+        Jarvis.say("Laporan tersimpan. Ke riwayat.");
+        alert("Berhasil Disimpan!"); 
+        location.href = "tampildata.html";
+    }
+
+    function cancelEdit() { 
+        stopCameraStream(); // Matikan kamera jika batal
+        localStorage.removeItem('lapdok_draft'); 
+        localStorage.removeItem('lapdok_edit_context'); 
+        window.location.reload(); 
+    }
+
+    function initMuteButtonState() {
+        const btn = document.getElementById('jarvis-mute-toggle');
+        if (btn) {
+            btn.innerText = Jarvis.muted ? "🔇" : "🔊";
+            btn.classList.toggle('muted', Jarvis.muted);
+        }
+    }
+
+    window.onload = () => {
+        initMuteButtonState();
+        preWarmCamera(); 
+        // Cek apakah Jarvis diaktifkan di Dashboard
+        if (sessionStorage.getItem('jarvis_activated') === 'true') {
+            Jarvis.activate();
+            Jarvis.say("Pilih tanggal dulu.");
+        }
+        getGPSLocation(); // Kunci lokasi sejak halaman dimuat
+        const saved = localStorage.getItem('lapdok_draft');
+        let displayJob = currentJob;
+
+        if(saved) {
+            const parsed = JSON.parse(saved);
+            const items = Array.isArray(parsed) ? parsed : (parsed.items || []);
+            const savedJobId = parsed.jobId || currentJobId;
+            
+            // Prioritaskan JobId dari draf
+            displayJob = jobData[savedJobId] || jobData["0"];
+            document.querySelector('.tupoksi-val').innerText = displayJob.tupoksi;
+
+            if(editContextId) document.getElementById('edit-banner').style.display = 'block';
+            
+            items.forEach((d, i) => {
+                addNewJobItem(true); const id = i + 1;
+                document.getElementById(`date-in-${id}`).value = d.workDate;
+                
+                // Update dropdown options for this specific job
+                const sel = document.getElementById(`sel-${id}`);
+                sel.innerHTML = `<option value="">-- Pilih Jenis Pekerjaan --</option>` + 
+                                displayJob.indikators.map(o => `<option value="${o}">${o}</option>`).join('');
+                
+                document.getElementById(`sel-${id}`).value = d.indikator;
+                document.getElementById(`ta-${id}`).value = d.desc;
+                if(d.p1) document.getElementById(`p1-${id}`).innerHTML = `<img src="${d.p1}">`;
+                if(d.p2) document.getElementById(`p2-${id}`).innerHTML = `<img src="${d.p2}">`;
+                if(d.p3) document.getElementById(`p3-${id}`).innerHTML = `<img src="${d.p3}">`;
+            });
+        } else { 
+            document.querySelector('.tupoksi-val').innerText = displayJob.tupoksi;
+            addNewJobItem(true); 
+        }
+    };
+</script>
+
+<!-- Sticky Developer Info Footer -->
+<div class="sticky-footer-slim">
+    <div class="developer-info">
+        Developed by Stark Industries
+    </div>
+</div>
+</body>
+</html>
