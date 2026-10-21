@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Input Laporan Operator IPA</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2c3e50">
+    <link rel="icon" type="image/png" href="../assets/icons/icon-192.png">
+
+    <!-- Leaflet JS & CSS (Peta LapDok) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- LocalForage & Smart Image Compressor -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    <script src="../js/image-compressor.js"></script>
+
+    <style>
+        /* Gaya Dasar Persis LapDok */
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; 
+            background-color: #f4f7f6; 
+            color: #333; 
+            font-size: 11px; 
+            padding-bottom: 90px;
+        }
+
+        /* Navigasi LapDok */
+        .navbar { 
+            display: flex; 
+            justify-content: space-around; 
+            background: #2c3e50; 
+            padding: 12px 0; 
+            position: sticky; 
+            top: 0; 
+            z-index: 999; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+        }
+        .navbar a { 
+            color: white; 
+            text-decoration: none; 
+            font-weight: bold; 
+            font-size: 13px; 
+            opacity: 0.7; 
+            transition: 0.2s;
+        }
+        .navbar a.active, .navbar a:hover { 
+            opacity: 1; 
+            border-bottom: 2px solid #00d2ff; 
+        }
+
+        .container { 
+            width: 100%; 
+            max-width: 860px; 
+            margin: auto; 
+            padding: 15px; 
+        }
+
+        /* Banner Edit Mode */
+        #edit-banner { 
+            display: none; 
+            background: #e67e22; 
+            color: white; 
+            padding: 12px; 
+            border-radius: 6px; 
+            margin-bottom: 15px; 
+            text-align: center; 
+            font-weight: bold; 
+        }
+
+        /* Kartu Identitas Global (LapDok Style) */
+        .global-info-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #d1d8dd;
+            margin-bottom: 18px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        }
+        .global-info-header {
+            font-size: 13px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 6px;
+        }
+        .global-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        .global-info-card label {
+            display: block;
+            font-size: 10px;
+            font-weight: bold;
+            color: #34495e;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .global-info-card input, .global-info-card select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            background: #fff;
+            color: #333;
+        }
+        .global-info-card input:focus, .global-info-card select:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        /* Kartu Item Pekerjaan LapDok */
+        .job-item { 
+            background: white; 
+            border: 1px solid #d1d8dd; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+            overflow: hidden; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08); 
+        }
+
+        .header-main { 
+            padding: 10px 15px; 
+            background: #34495e; 
+            color: #fff; 
+            font-weight: bold; 
+            font-size: 13px;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+
+        .input-group { 
+            padding: 12px; 
+            border-bottom: 1px solid #f0f0f0; 
+        }
+
+        /* Section Tanggal & Pekerjaan */
+        .date-section { 
+            margin-bottom: 12px; 
+            background: #f9f9f9; 
+            padding: 10px; 
+            border-radius: 4px; 
+            border-left: 4px solid #3498db; 
+        }
+        .job-select-box {
+            width: 100%;
+            padding: 10px;
+            border: 1.5px solid #3498db;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #2c3e50;
+            background: #fff;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+
+        /* Box SOP LapDok */
+        .sop-alert {
+            background: #eaf2f8;
+            border-left: 4px solid #2980b9;
+            padding: 8px 12px;
+            border-radius: 0 4px 4px 0;
+            margin-top: 8px;
+            font-size: 10.5px;
+            line-height: 1.5;
+            color: #1b4f72;
+        }
+        .sop-alert strong { color: #154360; }
+        .sop-alert ul { margin-left: 16px; margin-top: 4px; }
+
+        /* GPS & Peta LapDok */
+        .btn-map-trigger { 
+            background-color: #f39c12; 
+            color: white; 
+            padding: 10px; 
+            border: none; 
+            border-radius: 4px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            width: 100%; 
+            margin-bottom: 8px; 
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .btn-map-trigger:hover { background-color: #e67e22; }
+        .gps-res { 
+            width: 100%; 
+            padding: 8px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+            font-size: 10px; 
+            background: #fafafa; 
+            color: #2980b9; 
+            font-weight: bold; 
+            margin-bottom: 5px; 
+        }
+        .address-output { 
+            font-size: 10px; 
+            color: #444; 
+            background: #fffbe6; 
+            padding: 8px; 
+            border-left: 4px solid #f39c12; 
+            min-height: 28px; 
+            line-height: 1.4; 
+            border-radius: 2px;
+        }
+
+        /* Form Parameter Khusus */
+        .param-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+            background: #fdfefe;
+            padding: 10px;
+            border: 1px solid #eaeded;
+            border-radius: 4px;
+        }
+        .param-grid label {
+            display: block;
+            font-size: 9.5px;
+            font-weight: bold;
+            color: #566573;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+        }
+        .param-grid input, .param-grid select {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #ccd1d1;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        /* GRID FOTO LAPDOK STYLE (Clean Columns) */
+        .grid-header { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); 
+            text-align: center; 
+            background: #ecf0f1; 
+            font-size: 10px; 
+            font-weight: bold; 
+            padding: 8px 4px; 
+            border-top: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+            color: #2c3e50;
+        }
+        .grid-content { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); 
+        }
+        .column { 
+            padding: 10px 8px; 
+            border-right: 1px solid #eee; 
+            border-bottom: 1px solid #eee;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            background: #fff;
+            position: relative;
+        }
+        .column:last-child { border-right: none; }
+        
+        .slot-title {
+            font-weight: bold;
+            font-size: 10px;
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 6px;
+            min-height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .photo-actions { 
+            display: flex; 
+            gap: 4px; 
+            margin-bottom: 6px; 
+            width: 100%;
+            justify-content: center;
+        }
+        .btn-photo { 
+            padding: 6px 10px; 
+            font-size: 12px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            background: white; 
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: bold;
+            color: #34495e;
+            transition: 0.15s;
+        }
+        .btn-photo:hover { background: #f0f3f4; border-color: #3498db; }
+        .btn-photo.btn-del-photo { color: #e74c3c; border-color: #f5b7b1; }
+        .btn-photo.btn-del-photo:hover { background: #fdedec; }
+
+        .image-preview { 
+            width: 100%; 
+            aspect-ratio: 4/3; 
+            border: 2px dashed #ddd; 
+            border-radius: 4px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            background: #fafafa; 
+            overflow: hidden; 
+            margin-top: 4px; 
+            position: relative;
+            transition: border-color 0.2s;
+        }
+        .image-preview.has-photo {
+            border: 2px solid #27ae60;
+            background: #1e293b;
+        }
+        .image-preview img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: contain; 
+            display: block;
+        }
+        .image-preview .placeholder-txt {
+            font-size: 9px;
+            color: #95a5a6;
+            text-align: center;
+            padding: 6px;
+        }
+
+        .btn-add-slot-trigger {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: 0.15s;
+        }
+        .btn-add-slot-trigger:hover {
+            background: #219653;
+            transform: translateY(-1px);
+        }
+        .btn-del-slot-header {
+            background: rgba(231, 76, 60, 0.15);
+            color: #c0392b;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            border-radius: 50%;
+            width: 17px;
+            height: 17px;
+            font-size: 11px;
+            font-weight: bold;
+            line-height: 1;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            margin-left: 4px;
+            transition: 0.15s;
+        }
+        .btn-del-slot-header:hover {
+            background: #e74c3c;
+            color: white;
+        }
+
+        /* Footer Keterangan LapDok */
+        .footer-section { padding: 12px; background: #fdfefe; }
+        .footer-section label {
+            display: block;
+            font-size: 10px;
+            font-weight: bold;
+            color: #34495e;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        .footer-section textarea { 
+            width: 100%; 
+            min-height: 65px; 
+            padding: 8px 10px; 
+            border: 1px solid #ccc; 
+            font-size: 11px; 
+            resize: vertical; 
+            border-radius: 4px; 
+            font-family: inherit;
+        }
+        .footer-section textarea:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        /* Tombol Aksi LapDok */
+        .actions { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+            margin-top: 20px; 
+        }
+        .btn-add { 
+            background: #3498db; 
+            color: white; 
+            padding: 14px; 
+            border: none; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-add:hover { background: #2980b9; }
+        .btn-save { 
+            background: #27ae60; 
+            color: white; 
+            padding: 14px; 
+            border: none; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-save:hover { background: #229954; }
+
+        /* MODAL MAPS LAPDOK */
+        #map-modal { 
+            display: none; 
+            position: fixed; 
+            z-index: 9999; 
+            left: 0; top: 0; 
+            width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.8); 
+        }
+        .modal-content { 
+            background: white; 
+            margin: 5% auto; 
+            width: 95%; 
+            max-width: 600px; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            position: relative; 
+        }
+        #map-container { width: 100%; height: 380px; background: #eee; }
+        .map-controls { position: absolute; top: 10px; right: 10px; z-index: 1000; }
+        .btn-locate { 
+            background: white; 
+            border: 2px solid rgba(0,0,0,0.2); 
+            border-radius: 4px; 
+            width: 36px; height: 36px; 
+            cursor: pointer; 
+            font-size: 18px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+        }
+
+        /* MODAL CAMERA & TIME MARK LAPDOK */
+        #cam-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background: #000;
+            overflow: hidden;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #cam-video {
+            max-width: 100%;
+            max-height: calc(100% - 110px);
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            margin: auto;
+        }
+        .cam-controls {
+            position: fixed;
+            bottom: 0; left: 0;
+            width: 100%; height: 100px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 10001;
+            background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%);
+            padding: 0 20px 16px;
+            box-sizing: border-box;
+        }
+        .btn-shutter {
+            width: 70px; height: 70px;
+            background: white;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            flex-shrink: 0;
+        }
+        .btn-shutter:active { transform: scale(0.9); background: #eee; }
+
+        /* TIME MARK STYLES PERSIS LAPDOK */
+        #cam-overlay {
+            position: fixed;
+            bottom: 110px;
+            left: 20px;
+            max-width: calc(100% - 40px);
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            pointer-events: none;
+            z-index: 10001;
+            font-family: Arial, sans-serif;
+            display: none;
+            box-sizing: border-box;
+        }
+        .tm-flex { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .tm-time { font-size: 38px; font-weight: bold; font-family: 'Arial Narrow', sans-serif; }
+        .tm-line { width: 3px; height: 35px; background: #FFD700; border-radius: 2px; }
+        .tm-date-col { display: flex; flex-direction: column; justify-content: center; }
+        .tm-date { font-size: 14px; font-weight: bold; }
+        .tm-day { font-size: 14px; font-weight: bold; }
+        .tm-info { font-size: 11px; opacity: 0.95; margin-top: 3px; word-break: break-word; line-height: 1.35; max-width: 100%; }
+
+        @media (orientation: landscape) {
+            #cam-video { max-height: calc(100% - 80px); }
+            .cam-controls { height: 70px; padding-bottom: 8px; }
+            #cam-overlay { bottom: 80px; left: 15px; }
+            .tm-time { font-size: 28px; }
+            .tm-date { font-size: 11px; }
+            .tm-day { font-size: 11px; }
+            .tm-info { font-size: 9px; }
+            .btn-shutter { width: 55px; height: 55px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigasi Operator -->
+    <nav class="navbar">
+        <a href="index.html" class="active">📝 Form Operator</a>
+        <a href="tampildata.html">📂 Riwayat Laporan</a>
+    </nav>
+
+    <div class="container">
+        
+        <div id="edit-banner">
+            ⚠️ MODE EDIT LAPORAN: Perubahan akan menimpa data lama. <br> 
+            <button onclick="cancelEdit()" style="margin-top:5px; padding:5px 10px; cursor:pointer; border-radius:4px; border:none; background:white; font-weight:bold;">Batal Edit</button>
+        </div>
+
+        <!-- Kartu Identitas Petugas & Shift (LapDok Global Info Card) -->
+        <div class="global-info-card">
+            <div class="global-info-header">
+                <span>👤 IDENTITAS OPERATOR & SHIFT</span>
+                <span style="font-size:10px; color:#2980b9; font-weight:bold;">PERUMDAM AMERTA TORAYA</span>
+            </div>
+            <div class="global-grid" style="grid-template-columns: 1fr 1fr;">
+                <div>
+                    <label for="op_nama">Nama Operator</label>
+                    <input type="text" id="op_nama" value="YULIUS BODA" required>
+                </div>
+                <div>
+                    <label for="op_shift">Jadwal Shift Kerja</label>
+                    <select id="op_shift">
+                        <option value="Shift Pagi (07:30 - 14:30)">Shift Pagi (07:30 - 14:30)</option>
+                        <option value="Shift Siang (14:30 - 21:30)">Shift Siang (14:30 - 21:30)</option>
+                        <option value="Shift Malam (21:30 - 07:30)">Shift Malam (21:30 - 07:30)</option>
+                        <option value="Non-Shift / Rutin Harian">Non-Shift / Rutin Harian</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kartu Utama Pekerjaan Operator (LapDok Job-Item) -->
+        <div class="job-item">
+            <div class="header-main">
+                <span id="job-card-title">ITEM PEKERJAAN OPERATOR (1 DOKUMEN)</span>
+                <span style="background: #00d2ff; color: #2c3e50; font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: bold;">
+                    TARGET: 1 DOKUMEN
+                </span>
+            </div>
+
+            <div class="input-group">
+                <!-- Pemilihan Pekerjaan -->
+                <div class="date-section">
+                    <label style="font-weight: bold; font-size: 10px; color: #34495e; text-transform: uppercase;">
+                        📅 Tanggal & Jenis Pekerjaan:
+                    </label>
+                    <div style="display:flex; gap:10px; margin-top:5px; flex-wrap:wrap;">
+                        <input type="date" id="op_tanggal" style="flex:0.6; min-width:140px; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:11px;">
+                        <select id="op_jenis_pekerjaan" class="job-select-box" style="flex:1.4; margin-top:0;" onchange="onJobChange()">
+                            <option value="KIMIA">1. Mencampur Bahan Kimia sesuai dosis dan prosedur</option>
+                            <option value="POMPA">2. Pelaksanaan Operasional Pompa</option>
+                            <option value="BERSIH_IPA">3. Membersihkan Instalasi Pengolahan Air (IPA), Intake, Pipa Resapan, & Sedimen</option>
+                            <option value="FLOW_METER">4. Laporan Pembacaan Flow Meter Air Baku dan Meter Induk Distribusi</option>
+                            <option value="RESERVOIR">5. Melakukan Pengisian Reservoir</option>
+                        </select>
+                    </div>
+
+                    <!-- SOP Ringkas -->
+                    <div id="sop-display" class="sop-alert"></div>
+                </div>
+
+                <!-- GPS & Lokasi LapDok -->
+                <button type="button" class="btn-map-trigger" onclick="openMapModal()">
+                    📍 Tentukan Titik Lokasi Peta / GPS
+                </button>
+                <input type="text" id="op_gps" class="gps-res" placeholder="Koordinat GPS (Otomatis / Klik Peta)" readonly>
+                <div id="op_alamat" class="address-output">Memuat lokasi alamat...</div>
+            </div>
+
+            <!-- Header Grid Foto LapDok -->
+            <div class="grid-header" id="grid-header-row">
+                <!-- Disuntikkan JS -->
+            </div>
+
+            <!-- Konten Grid Foto LapDok (Kolom Side-by-Side) -->
+            <div class="grid-content" id="grid-content-row">
+                <!-- Disuntikkan JS -->
+            </div>
+
+            <!-- Toolbar Tambah Slot Foto -->
+            <div style="padding: 10px 14px; background: #f8f9fa; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <span style="font-size: 11px; color: #555; font-weight: bold;">
+                    📸 Jumlah Slot Foto: <span id="photo-count-badge" style="color: #2980b9;">0 Foto</span>
+                </span>
+                <button type="button" class="btn-add-slot-trigger" onclick="addNewPhotoSlot()">
+                    ➕ Tambah Foto Lainnya
+                </button>
+            </div>
+
+            <!-- Catatan Footer LapDok -->
+            <div class="footer-section">
+                <label for="op_catatan">Catatan / Uraian Realisasi Pekerjaan Saat Piket:</label>
+                <textarea id="op_catatan" placeholder="Tuliskan catatan teknis operasional (kondisi pompa, takaran, volume reservoir, hasil pembacaan meter, dll)..."></textarea>
+            </div>
+        </div>
+
+        <!-- Tombol Aksi LapDok -->
+        <div class="actions">
+            <button type="button" class="btn-save" onclick="saveOperatorReport()">
+                💾 Simpan ke Riwayat Laporan
+            </button>
+            <button type="button" class="btn-add" onclick="previewDirectPDF()">
+                🖨️ Pratinjau & Cetak Dokumen PDF
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Hidden File Input for uploading -->
+    <input type="file" id="slot-file-input" accept="image/*" style="display: none;" onchange="handleFileInput(event)">
+
+    <!-- MODAL MAPS LAPDOK -->
+    <div id="map-modal">
+        <div class="modal-content">
+            <div style="position: relative;">
+                <div id="map-container"></div>
+                <div class="map-controls">
+                    <button class="btn-locate" onclick="getCurrentLocation()" title="Pusatkan ke Lokasi Saya Saat Ini (GPS)">🎯</button>
+                </div>
+            </div>
+            <div style="padding:12px 15px; display:flex; justify-content: space-between; align-items: center; background:#fafafa;">
+                <span id="map-status" style="font-size:10px; color:#e67e22; font-weight:bold;">Klik pada peta atau tekan tombol 🎯</span>
+                <div>
+                    <button onclick="closeMapModal()" style="padding:8px 12px; margin-right:5px; border:1px solid #ccc; background:#fff; border-radius:4px; cursor:pointer;">Batal</button>
+                    <button onclick="confirmMapLocation()" style="padding:8px 14px; background:#27ae60; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">Pilih Lokasi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CAMERA LAPDOK -->
+    <div id="cam-modal">
+        <video id="cam-video" autoplay playsinline muted></video>
+        <div id="cam-overlay" style="display: none;">
+            <div class="tm-flex">
+                <div class="tm-time" id="val-time"></div>
+                <div class="tm-line"></div>
+                <div class="tm-date-col">
+                    <div class="tm-date" id="val-date"></div>
+                    <div class="tm-day" id="val-day"></div>
+                </div>
+            </div>
+            <div class="tm-info" id="val-gps"></div>
+            <div class="tm-info" id="val-addr"></div>
+        </div>
+        <div class="cam-controls">
+            <button onclick="closeCamera()" style="color:white; background:none; border:none; font-size:13px; font-weight:bold; cursor:pointer;">✖ Batal</button>
+            <button class="btn-shutter" onclick="captureCameraPhoto()"></button>
+            <button onclick="toggleCameraFacing()" style="color:white; background:rgba(255,255,255,0.15); border:2px solid rgba(255,255,255,0.5); border-radius:50%; width:44px; height:44px; font-size:22px; cursor:pointer;" title="Ganti Kamera">🔄</button>
+        </div>
+    </div>
+
+    <!-- Core App Logic -->
+    <script>
+        const JOB_SPECS = {
+            KIMIA: {
+                title: "Mencampur Bahan Kimia sesuai dosis dan prosedur",
+                sop: [
+                    "Pencampuran bahan kimia sesuai takaran dan instruksi.",
+                    "Dokumentasikan setting takar (stroke) pada pompa bahan kimia.",
+                    "Melaporkan jumlah penggunaan bahan kimia (tawas / PAC & kaporit) saat piket.",
+                    "Dokumentasi lengkap proses kegiatan pencampuran bahan kimia."
+                ],
+                slots: [
+                    { id: "foto_1", label: "Takaran Kimia", guide: "Tawas/PAC & Kaporit yang ditimbang" },
+                    { id: "foto_2", label: "Proses Pengadukan", guide: "Petugas melarutkan bahan di bak kimia" },
+                    { id: "foto_3", label: "Setting Pompa Dosing", guide: "Skala / stroke pompa injeksi kimia" },
+                    { id: "foto_4", label: "Larutan Siap Injeksi", guide: "Kondisi bak kimia siap injeksi" }
+                ]
+            },
+            POMPA: {
+                title: "Pelaksanaan Operasional Pompa",
+                sop: [
+                    "Mengoperasikan semua pompa secara tepat waktu sesuai jadwal produksi.",
+                    "Membuka-tutup valve guna keperluan distribusi air dan pengurasan.",
+                    "Mendokumentasikan aset produksi yang sedang dioperasikan.",
+                    "Bagi IPA yang tidak memiliki pompa intake/distribusi, cukup laporkan pompa bahan kimia."
+                ],
+                slots: [
+                    { id: "foto_1", label: "Unit Pompa Aktif", guide: "Pompa running / aset yang beroperasi" },
+                    { id: "foto_2", label: "Panel & Indikator", guide: "Lampu ON / display voltase & ampere" },
+                    { id: "foto_3", label: "Pressure Gauge", guide: "Jarum manometer tekanan air (Bar/Psi)" },
+                    { id: "foto_4", label: "Posisi Valve", guide: "Valve terbuka/tertutup untuk distribusi" }
+                ]
+            },
+            BERSIH_IPA: {
+                title: "Membersihkan Instalasi Pengolahan Air (IPA), Intake, Pipa Resapan, & Sedimen",
+                sop: [
+                    "Melaksanakan pengurasan sedimentasi IPA (Clarifier) dan bak Intake.",
+                    "Cuci balik (backwash) bilik saringan pasir/filter pada unit IPA.",
+                    "Mencuci Settler (Tube settler), bagian dalam dinding IPA & Reservoir.",
+                    "Mengangkat dan membersihkan sedimen lumpur pada saluran pengendapan.",
+                    "Wajib dokumentasikan: Foto SEBELUM, SEDANG, dan SESUDAH pembersihan."
+                ],
+                slots: [
+                    { id: "foto_1", label: "Kondisi SEBELUM", guide: "Endapan lumpur / sedimen sebelum dikuras" },
+                    { id: "foto_2", label: "Proses SEDANG Cuci", guide: "Pengurasan / backwash bilik filter" },
+                    { id: "foto_3", label: "Kondisi SESUDAH", guide: "Bak & settler bersih bebas dari lumpur" },
+                    { id: "foto_4", label: "Petugas di Lokasi", guide: "Dokumentasi operator saat bertugas" }
+                ]
+            },
+            FLOW_METER: {
+                title: "Laporan Pembacaan Flow Meter Air Baku dan Meter Induk Distribusi",
+                sop: [
+                    "Foto close-up angka stand register flow meter air baku yang masuk.",
+                    "Foto close-up angka register Meter Induk Distribusi yang disalurkan ke pelanggan.",
+                    "Catat angka meteran dengan teliti beserta jam pencatatan."
+                ],
+                slots: [
+                    { id: "foto_1", label: "Meter Air Baku", guide: "Close-up angka counter flow meter air baku" },
+                    { id: "foto_2", label: "Meter Distribusi", guide: "Close-up angka meter induk distribusi" },
+                    { id: "foto_3", label: "Fisik Unit Meter", guide: "Instalasi pipa transmisi & meteran" }
+                ]
+            },
+            RESERVOIR: {
+                title: "Melakukan Pengisian Reservoir",
+                sop: [
+                    "Melakukan pengisian air bersih ke dalam bak reservoir setelah piket berakhir.",
+                    "Mendokumentasikan secara jelas hasil kuantitas air dalam reservoir (sedikit, setengah, penuh).",
+                    "Mendokumentasikan tingkat kualitas kejernihan air produksi dalam bak penampungan."
+                ],
+                slots: [
+                    { id: "foto_1", label: "Level Air Reservoir", guide: "Tampak water level (Penuh/Setengah/Sedikit)" },
+                    { id: "foto_2", label: "Kejernihan Air", guide: "Permukaan air jernih dalam reservoir" },
+                    { id: "foto_3", label: "Aliran Inflow", guide: "Pipa inflow pengisian masuk reservoir" }
+                ]
+            }
+        };
+
+        let currentPhotos = {};
+        let currentSlots = [];
+        let activeSlotId = null;
+        let map = null;
+        let mapMarker = null;
+        let tempCoords = null;
+        let videoStream = null;
+        let facingMode = "environment";
+        let editContextId = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('op_tanggal').value = today;
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const editId = urlParams.get('edit');
+            if (editId) {
+                editContextId = editId;
+                document.getElementById('edit-banner').style.display = 'block';
+                loadExistingReport(editId);
+            } else {
+                onJobChange();
+                detectGPSLocation(true);
+            }
+        });
+
+        function cancelEdit() {
+            window.location.href = "tampildata.html";
+        }
+
+        function onJobChange() {
+            const jobKey = document.getElementById('op_jenis_pekerjaan').value;
+            const jobData = JOB_SPECS[jobKey];
+            if (!jobData) return;
+
+            document.getElementById('job-card-title').innerText = `${jobData.title.toUpperCase()} (1 DOKUMEN)`;
+
+            // SOP Box
+            document.getElementById('sop-display').innerHTML = `
+                <strong>📋 Petunjuk SOP & Ketentuan Pelaporan:</strong>
+                <ul>${jobData.sop.map(s => `<li>${s}</li>`).join('')}</ul>
+            `;
+
+            // Hitung jumlah slot: gunakan default pekerjaan atau pertahankan jika sudah ada foto
+            const defaultCount = jobData.slots.length;
+            const existingKeys = Object.keys(currentPhotos);
+            const slotCount = Math.max(defaultCount, existingKeys.length);
+
+            currentSlots = [];
+            for (let i = 0; i < slotCount; i++) {
+                currentSlots.push({ id: `foto_${i + 1}` });
+            }
+
+            renderPhotoColumns(currentSlots);
+        }
+
+        function addNewPhotoSlot() {
+            const nextIdx = currentSlots.length + 1;
+            currentSlots.push({ id: `foto_${nextIdx}` });
+            renderPhotoColumns(currentSlots);
+        }
+
+        function removePhotoSlot(slotId) {
+            if (currentPhotos[slotId]) {
+                if (!confirm("Hapus slot foto ini beserta fotonya?")) return;
+                delete currentPhotos[slotId];
+            }
+            currentSlots = currentSlots.filter(s => s.id !== slotId);
+
+            // Re-index slots & photos agar selalu berurutan FOTO 1, FOTO 2, dst.
+            const reorderedPhotos = {};
+            const reorderedSlots = [];
+            currentSlots.forEach((s, idx) => {
+                const newId = `foto_${idx + 1}`;
+                if (currentPhotos[s.id]) {
+                    reorderedPhotos[newId] = currentPhotos[s.id];
+                }
+                reorderedSlots.push({ id: newId });
+            });
+            currentPhotos = reorderedPhotos;
+            currentSlots = reorderedSlots;
+            renderPhotoColumns(currentSlots);
+        }
+
+        function renderPhotoColumns(slots) {
+            const headerRow = document.getElementById('grid-header-row');
+            const contentRow = document.getElementById('grid-content-row');
+
+            // Render Header dengan tombol hapus slot
+            headerRow.innerHTML = slots.map((s, i) => {
+                const canRemove = slots.length > 1;
+                return `
+                    <div style="display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                        <span>FOTO ${i + 1}</span>
+                        ${canRemove ? `
+                            <button type="button" class="btn-del-slot-header" onclick="removePhotoSlot('${s.id}')" title="Hapus Kolom Foto ${i + 1}">×</button>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            // Render Columns (LapDok style)
+            contentRow.innerHTML = slots.map((slot, i) => {
+                const photo = currentPhotos[slot.id];
+                const hasPhoto = !!photo;
+
+                return `
+                    <div class="column" id="col-${slot.id}">
+                        <div class="photo-actions">
+                            <button type="button" class="btn-photo" onclick="openCameraForSlot('${slot.id}', 'FOTO ${i + 1}')" title="Buka Kamera">
+                                📷
+                            </button>
+                            <button type="button" class="btn-photo" onclick="triggerFileUpload('${slot.id}')" title="Upload Galeri">
+                                📁
+                            </button>
+                            ${hasPhoto ? `
+                                <button type="button" class="btn-photo btn-del-photo" onclick="deleteSlotPhoto('${slot.id}')" title="Hapus Foto">
+                                    🗑️
+                                </button>
+                            ` : ''}
+                        </div>
+
+                        <div class="image-preview ${hasPhoto ? 'has-photo' : ''}" id="preview-${slot.id}">
+                            ${hasPhoto 
+                                ? `<img src="${photo.dataUrl}" alt="Foto ${i + 1}">` 
+                                : `<div class="placeholder-txt">Belum Ada Foto<br>📷 / 📁</div>`}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const badge = document.getElementById('photo-count-badge');
+            if (badge) {
+                const filledCount = Object.keys(currentPhotos).length;
+                badge.innerText = `${slots.length} Slot (${filledCount} Terisi)`;
+            }
+        }
+
+        let wmInterval = null;
+
+        // Kamera & Time Mark LapDok
+        function openCameraForSlot(slotId, slotLabel) {
+            activeSlotId = slotId;
+            document.getElementById('cam-modal').style.display = 'flex';
+            document.getElementById('cam-overlay').style.display = 'block';
+
+            if (wmInterval) clearInterval(wmInterval);
+            updateTimeMarkOverlay();
+            wmInterval = setInterval(updateTimeMarkOverlay, 1000);
+
+            startCameraStream();
+        }
+
+        function updateTimeMarkOverlay() {
+            const now = new Date();
+            const hhmm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+            const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const ddMMyyyy = now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+            const dddd = days[now.getDay()];
+
+            const gps = document.getElementById('op_gps').value || "Mencari...";
+            const alamat = document.getElementById('op_alamat').innerText || "Toraja Utara";
+
+            const valTime = document.getElementById('val-time');
+            const valDate = document.getElementById('val-date');
+            const valDay = document.getElementById('val-day');
+            const valGps = document.getElementById('val-gps');
+            const valAddr = document.getElementById('val-addr');
+
+            if (valTime) valTime.innerText = hhmm;
+            if (valDate) valDate.innerText = ddMMyyyy;
+            if (valDay) valDay.innerText = dddd;
+            if (valGps) valGps.innerText = `GPS : ${gps}`;
+            if (valAddr) valAddr.innerText = alamat;
+        }
+
+        async function startCameraStream() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(t => t.stop());
+                videoStream = null;
+            }
+
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: facingMode,
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    },
+                    audio: false
+                });
+                const video = document.getElementById('cam-video');
+                video.srcObject = videoStream;
+                video.onloadedmetadata = () => { adjustVideoSize(); };
+            } catch (err) {
+                try {
+                    videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                    const video = document.getElementById('cam-video');
+                    video.srcObject = videoStream;
+                    video.onloadedmetadata = () => { adjustVideoSize(); };
+                } catch(e2) {
+                    alert("Kamera tidak dapat diakses: " + err.message + ". Silakan gunakan tombol 📁 (Galeri) untuk memilih foto.");
+                    closeCamera();
+                }
+            }
+        }
+
+        function adjustVideoSize() {
+            const video = document.getElementById('cam-video');
+            if (!video.videoWidth || !video.videoHeight) return;
+
+            const screenW = window.innerWidth;
+            const screenH = window.innerHeight;
+            const videoRatio = video.videoWidth / video.videoHeight;
+            const screenRatio = screenW / screenH;
+
+            if (videoRatio > screenRatio) {
+                video.style.width = '100%';
+                video.style.height = 'auto';
+            } else {
+                video.style.width = 'auto';
+                video.style.height = '100%';
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            if (document.getElementById('cam-modal').style.display !== 'none') {
+                adjustVideoSize();
+            }
+        });
+
+        async function toggleCameraFacing() {
+            facingMode = (facingMode === 'environment') ? 'user' : 'environment';
+            await startCameraStream();
+        }
+
+        function closeCamera() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(t => t.stop());
+                videoStream = null;
+            }
+            if (wmInterval) clearInterval(wmInterval);
+            document.getElementById('cam-modal').style.display = 'none';
+            document.getElementById('cam-overlay').style.display = 'none';
+        }
+
+        function captureCameraPhoto() {
+            const video = document.getElementById('cam-video');
+            const canvas = document.createElement('canvas');
+            
+            // Logika Aspect Ratio Murni (LapDok)
+            const MAX_DIM = 1000;
+            let w = video.videoWidth || 1280;
+            let h = video.videoHeight || 720;
+
+            if (w > MAX_DIM || h > MAX_DIM) {
+                if (w > h) {
+                    h = Math.floor(h * (MAX_DIM / w));
+                    w = MAX_DIM;
+                } else {
+                    w = Math.floor(w * (MAX_DIM / h));
+                    h = MAX_DIM;
+                }
+            }
+
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(video, 0, 0, w, h);
+
+            // Terapkan Stempel Time Mark LapDok
+            applyWatermarkToCanvas(canvas);
+
+            // Kompresi Cerdas LapDok
+            const compressedUrl = (typeof SmartCompressor !== 'undefined')
+                ? SmartCompressor.compressCanvas(canvas, 1000, 0.75)
+                : canvas.toDataURL('image/jpeg', 0.8);
+
+            currentPhotos[activeSlotId] = {
+                dataUrl: compressedUrl,
+                timestamp: new Date().toISOString()
+            };
+
+            closeCamera();
+            renderPhotoColumns(currentSlots);
+        }
+
+        function triggerFileUpload(slotId) {
+            activeSlotId = slotId;
+            document.getElementById('slot-file-input').click();
+        }
+
+        function handleFileInput(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (typeof SmartCompressor !== 'undefined') {
+                SmartCompressor.compressImageFile(file, 1000, 0.75).then(res => {
+                    const canvas = res.canvas;
+                    // Upload dari galeri perangkat TIDAK menggunakan timemark (persis LapDok)
+                    const compressedDataUrl = SmartCompressor.compressCanvas(canvas, 1000, 0.75);
+                    currentPhotos[activeSlotId] = {
+                        dataUrl: compressedDataUrl,
+                        timestamp: new Date().toISOString()
+                    };
+                    renderPhotoColumns(currentSlots);
+                }).catch(err => {
+                    console.error("Kompresi gagal:", err);
+                });
+            } else {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_DIM = 1000;
+                        let w = img.width;
+                        let h = img.height;
+                        if (w > h) {
+                            if (w > MAX_DIM) { h = Math.floor(h * (MAX_DIM / w)); w = MAX_DIM; }
+                        } else {
+                            if (h > MAX_DIM) { w = Math.floor(w * (MAX_DIM / h)); h = MAX_DIM; }
+                        }
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        ctx.drawImage(img, 0, 0, w, h);
+                        // Upload dari galeri perangkat TIDAK menggunakan timemark
+                        currentPhotos[activeSlotId] = {
+                            dataUrl: canvas.toDataURL('image/jpeg', 0.8),
+                            timestamp: new Date().toISOString()
+                        };
+                        renderPhotoColumns(currentSlots);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+            e.target.value = '';
+        }
+
+        function deleteSlotPhoto(slotId) {
+            if (confirm("Hapus foto pada kolom ini?")) {
+                delete currentPhotos[slotId];
+                renderPhotoColumns(currentSlots);
+            }
+        }
+
+        // FUNGSI WATERMARK STEMPEL TIME MARK PERSIS LAPDOK
+        function applyWatermarkToCanvas(canvas) {
+            const ctx = canvas.getContext('2d');
+            
+            ctx.shadowColor = 'rgba(0,0,0,0.85)';
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+
+            const padding = 20;
+
+            // Dapatkan Data Waktu
+            const now = new Date();
+            const hhmm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+            const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const ddMMyyyy = now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+            const dddd = days[now.getDay()];
+
+            const gpsVal = document.getElementById('op_gps').value || "-2.969100, 119.897200";
+            const addrVal = document.getElementById('op_alamat').innerText || "Kabupaten Toraja Utara, Sulawesi Selatan";
+
+            // Hitung pemotongan baris alamat lengkap agar tampil selengkap-lengkapnya
+            ctx.font = "14px Arial";
+            const maxTextWidth = canvas.width - (padding * 2);
+            const addrWords = (`Alamat: ${addrVal}`).split(' ');
+            const addrLines = [];
+            let currentLine = '';
+
+            for (let n = 0; n < addrWords.length; n++) {
+                const testLine = currentLine ? (currentLine + ' ' + addrWords[n]) : addrWords[n];
+                const metrics = ctx.measureText(testLine);
+                if (metrics.width > maxTextWidth && currentLine) {
+                    addrLines.push(currentLine);
+                    currentLine = addrWords[n];
+                } else {
+                    currentLine = testLine;
+                }
+            }
+            if (currentLine) {
+                addrLines.push(currentLine);
+            }
+
+            const lineHeight = 18;
+            const extraAddrHeight = (addrLines.length - 1) * lineHeight;
+            let timeY = canvas.height - (75 + extraAddrHeight);
+
+            // 1. Gambar Waktu Besar (Kiri Bawah)
+            ctx.font = "bold 60px 'Arial Narrow', Arial, sans-serif";
+            ctx.fillStyle = "white";
+            ctx.fillText(hhmm, padding, timeY);
+
+            // Mengukur lebar teks waktu
+            let timeWidth = ctx.measureText(hhmm).width;
+
+            // 2. Gambar Garis Vertikal Kuning (#FFD700)
+            let lineX = padding + timeWidth + 15;
+            ctx.beginPath();
+            ctx.moveTo(lineX, timeY - 50);
+            ctx.lineTo(lineX, timeY + 2);
+            ctx.strokeStyle = "#FFD700";
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            // 3. Gambar Tanggal & Hari (Kanan)
+            ctx.font = "bold 20px Arial";
+            ctx.fillStyle = "white";
+            let dateX = lineX + 15;
+            ctx.fillText(ddMMyyyy, dateX, timeY - 25);
+            ctx.fillText(dddd, dateX, timeY + 2);
+
+            // 4. Gambar Keterangan GPS & Alamat Selengkap-lengkapnya
+            ctx.font = "14px Arial";
+            ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+            ctx.fillText(`GPS : ${gpsVal}`, padding, timeY + 22);
+
+            for (let i = 0; i < addrLines.length; i++) {
+                ctx.fillText(addrLines[i], padding, timeY + 40 + (i * lineHeight));
+            }
+        }
+
+        // Parser koordinat fleksibel (URL Google Maps, koordinat teks, dll)
+        function parseCoords(str) {
+            if (!str) return null;
+            let clean = str;
+            if (clean.includes('query=')) {
+                clean = clean.split('query=')[1].split('&')[0];
+            }
+            const match = clean.match(/(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)/);
+            if (match) {
+                const lat = parseFloat(match[1]);
+                const lng = parseFloat(match[2]);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    return { lat, lng };
+                }
+            }
+            return null;
+        }
+
+        // Peta & GPS LapDok (Menggunakan Google Satellite & Poligon Wilayah Torut)
+        function openMapModal() {
+            document.getElementById('map-modal').style.display = 'block';
+            setTimeout(() => {
+                const existing = parseCoords(document.getElementById('op_gps').value);
+                const initLat = existing ? existing.lat : -2.9691;
+                const initLng = existing ? existing.lng : 119.8972;
+                const initZoom = existing ? 18 : 14;
+
+                if (!map) {
+                    map = L.map('map-container').setView([initLat, initLng], initZoom);
+
+                    // Tile Layer Google Satellite Hybrid persis LapDok
+                    L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+                        keepBuffer: 4,
+                        updateWhenIdle: true,
+                        maxZoom: 20
+                    }).addTo(map);
+
+                    // Poligon Wilayah Kabupaten Toraja Utara (OSM Nominatim) persis LapDok
+                    fetch('https://nominatim.openstreetmap.org/search.php?q=Toraja+Utara&polygon_geojson=1&format=jsonv2')
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data && data.length > 0 && data[0].geojson) {
+                                L.geoJSON(data[0].geojson, {
+                                    style: {
+                                        color: '#ff3333',
+                                        weight: 3,
+                                        opacity: 0.8,
+                                        fillColor: '#ff0000',
+                                        fillOpacity: 0.08,
+                                        dashArray: '5, 8'
+                                    }
+                                }).addTo(map);
+                            }
+                        })
+                        .catch(e => console.warn("Gagal merender poligon referensi:", e));
+
+                    setMapMarker(initLat, initLng);
+
+                    // Listener klik pada peta
+                    map.on('click', (e) => {
+                        setMapMarker(e.latlng.lat, e.latlng.lng);
+                        reverseGeocode(e.latlng.lat, e.latlng.lng);
+                    });
+
+                    // Listener event locationfound Leaflet persis LapDok
+                    map.on('locationfound', (e) => {
+                        onGPSFound(e.latlng.lat, e.latlng.lng);
+                    });
+
+                    map.on('locationerror', (e) => {
+                        console.warn("Leaflet locate:", e.message);
+                    });
+                } else {
+                    map.invalidateSize();
+                    map.setView([initLat, initLng], initZoom);
+                    setMapMarker(initLat, initLng);
+                }
+
+                // Jika belum ada koordinat tersimpan, otomatis cari posisi GPS saat modal dibuka
+                if (!existing) {
+                    getCurrentLocation();
+                }
+            }, 250);
+        }
+
+        // Fungsi Pusatkan Lokasi Persis LapDok (getCurrentLocation)
+        function getCurrentLocation() {
+            const statusEl = document.getElementById('map-status');
+            if (statusEl) statusEl.innerText = "🛰️ Mencari dan memusatkan posisi GPS saat ini...";
+
+            if (map) {
+                // Leaflet locate bawaan LapDok
+                map.locate({ setView: true, maxZoom: 18, enableHighAccuracy: true, maximumAge: 10000, timeout: 6000 });
+            }
+
+            // Jalankan deteksi ganda melalui Geolocation API dengan fallback cerdas
+            detectGPSLocation(false);
+        }
+
+        function onGPSFound(lat, lng) {
+            const latStr = lat.toFixed(6);
+            const lngStr = lng.toFixed(6);
+            document.getElementById('op_gps').value = `${latStr}, ${lngStr}`;
+            tempCoords = { lat, lng };
+
+            if (map) {
+                map.setView([lat, lng], 18);
+                setMapMarker(lat, lng);
+            }
+            reverseGeocode(lat, lng);
+            const statusEl = document.getElementById('map-status');
+            if (statusEl) statusEl.innerText = "📍 Posisi berhasil dipusatkan ke lokasi Anda!";
+        }
+
+        function setMapMarker(lat, lng) {
+            tempCoords = { lat, lng };
+            if (mapMarker) {
+                mapMarker.setLatLng([lat, lng]);
+            } else if (map) {
+                mapMarker = L.marker([lat, lng], { draggable: true }).addTo(map);
+                mapMarker.on('dragend', () => {
+                    const pos = mapMarker.getLatLng();
+                    setMapMarker(pos.lat, pos.lng);
+                    reverseGeocode(pos.lat, pos.lng);
+                });
+            }
+        }
+
+        function closeMapModal() {
+            document.getElementById('map-modal').style.display = 'none';
+        }
+
+        function confirmMapLocation() {
+            if (tempCoords) {
+                const lat = tempCoords.lat;
+                const lng = tempCoords.lng;
+                document.getElementById('op_gps').value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                document.getElementById('op_alamat').innerText = "Menerjemahkan koordinat...";
+                reverseGeocode(lat, lng);
+            }
+            closeMapModal();
+        }
+
+        function detectGPSLocation(silent = false) {
+            const statusEl = document.getElementById('map-status');
+            if (!navigator.geolocation) {
+                if (!silent) alert("Geolocation tidak didukung pada browser ini.");
+                if (statusEl) statusEl.innerText = "Browser tidak mendukung GPS.";
+                return;
+            }
+
+            // Percobaan 1: High Accuracy (GPS Akurat untuk Smartphone)
+            navigator.geolocation.getCurrentPosition(
+                (pos) => onGPSFound(pos.coords.latitude, pos.coords.longitude),
+                (err) => {
+                    console.warn("GPS High Accuracy timeout/gagal, mencoba fallback jaringan:", err);
+                    // Percobaan 2: Fallback Standard/Network Accuracy (Andal untuk Laptop/PC/Indoors)
+                    navigator.geolocation.getCurrentPosition(
+                        (pos2) => onGPSFound(pos2.coords.latitude, pos2.coords.longitude),
+                        (err2) => {
+                            console.warn("GPS Fallback juga gagal:", err2);
+                            if (statusEl) statusEl.innerText = "⚠️ GPS belum terdeteksi. Silakan klik langsung titik lokasi Anda pada peta.";
+                            if (!silent) {
+                                alert("Tidak dapat mendeteksi koordinat otomatis (" + (err2.message || "Izin lokasi dibatasi") + "). Silakan klik langsung posisi Anda pada peta satelit.");
+                            }
+                        },
+                        { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+                    );
+                },
+                { enableHighAccuracy: true, timeout: 4000, maximumAge: 10000 }
+            );
+        }
+
+        function reverseGeocode(lat, lng) {
+            const statusEl = document.getElementById('map-status');
+            if (statusEl) statusEl.innerText = "Menerjemahkan alamat...";
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.display_name) {
+                        const fullAddr = data.display_name.trim();
+                        document.getElementById('op_alamat').innerText = fullAddr;
+                        if (statusEl) statusEl.innerText = fullAddr;
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('op_alamat').innerText = "Lokasi tersimpan.";
+                    if (statusEl) statusEl.innerText = "Lokasi tersimpan.";
+                });
+        }
+
+        async function saveOperatorReport() {
+            const jobKey = document.getElementById('op_jenis_pekerjaan').value;
+            const jobInfo = JOB_SPECS[jobKey];
+
+            const reportData = {
+                id: editContextId ? Number(editContextId) : Date.now(),
+                timestamp: new Date().toISOString(),
+                operator: {
+                    nama: document.getElementById('op_nama').value.trim(),
+                    tanggal: document.getElementById('op_tanggal').value,
+                    shift: document.getElementById('op_shift').value,
+                    target: "1 Dokumen",
+                    gps: document.getElementById('op_gps').value,
+                    alamat: document.getElementById('op_alamat').innerText
+                },
+                pekerjaan: {
+                    kode: jobKey,
+                    judul: jobInfo.title,
+                    sop: jobInfo.sop,
+                    catatan: document.getElementById('op_catatan').value.trim()
+                },
+                photos: currentPhotos
+            };
+
+            try {
+                let history = await localforage.getItem('operator_history') || [];
+                if (editContextId) {
+                    history = history.map(h => String(h.id) === String(editContextId) ? reportData : h);
+                } else {
+                    history.unshift(reportData);
+                }
+                await localforage.setItem('operator_history', history);
+                alert("Laporan Operator berhasil disimpan ke Riwayat!");
+                window.location.href = "tampildata.html";
+            } catch (err) {
+                alert("Gagal menyimpan data: " + err.message);
+            }
+        }
+
+        function previewDirectPDF() {
+            const jobKey = document.getElementById('op_jenis_pekerjaan').value;
+            const jobInfo = JOB_SPECS[jobKey];
+
+            const tempReport = {
+                id: 'temp_' + Date.now(),
+                timestamp: new Date().toISOString(),
+                operator: {
+                    nama: document.getElementById('op_nama').value.trim(),
+                    tanggal: document.getElementById('op_tanggal').value,
+                    shift: document.getElementById('op_shift').value,
+                    target: "1 Dokumen",
+                    gps: document.getElementById('op_gps').value,
+                    alamat: document.getElementById('op_alamat').innerText
+                },
+                pekerjaan: {
+                    kode: jobKey,
+                    judul: jobInfo.title,
+                    sop: jobInfo.sop,
+                    catatan: document.getElementById('op_catatan').value.trim()
+                },
+                photos: currentPhotos
+            };
+
+            sessionStorage.setItem('direct_print_data', JSON.stringify(tempReport));
+            window.location.href = "print-preview.html?mode=direct";
+        }
+
+        async function loadExistingReport(id) {
+            try {
+                const history = await localforage.getItem('operator_history') || [];
+                const item = history.find(h => String(h.id) === String(id));
+                if (!item) return;
+
+                document.getElementById('op_nama').value = item.operator.nama;
+                document.getElementById('op_tanggal').value = item.operator.tanggal;
+                document.getElementById('op_shift').value = item.operator.shift;
+                document.getElementById('op_gps').value = item.operator.gps || '';
+                document.getElementById('op_alamat').innerText = item.operator.alamat || '';
+                document.getElementById('op_catatan').value = item.pekerjaan.catatan || '';
+
+                document.getElementById('op_jenis_pekerjaan').value = item.pekerjaan.kode;
+                onJobChange();
+
+                currentPhotos = item.photos || {};
+                const photoKeys = Object.keys(currentPhotos);
+                const defaultCount = (JOB_SPECS[item.pekerjaan.kode] && JOB_SPECS[item.pekerjaan.kode].slots) ? JOB_SPECS[item.pekerjaan.kode].slots.length : 4;
+                const slotCount = Math.max(defaultCount, photoKeys.length);
+                currentSlots = [];
+                for (let i = 0; i < slotCount; i++) {
+                    currentSlots.push({ id: `foto_${i + 1}` });
+                }
+                renderPhotoColumns(currentSlots);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    </script>
+</body>
+</html>

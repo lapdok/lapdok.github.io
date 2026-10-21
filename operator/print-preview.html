@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview Laporan Kinerja Operator</title>
+    
+    <link rel="icon" type="image/png" href="../assets/icons/icon-192.png">
+
+    <!-- Libraries for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+
+    <style>
+        /* Persis Styling print-preview.html LapDok */
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        body { 
+            background: #525659; 
+            margin: 0; 
+            padding-top: 60px; 
+            font-family: 'Segoe UI', Tahoma, sans-serif; 
+        }
+
+        /* Toolbar LapDok */
+        .preview-toolbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 60px;
+            background: #34495e;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            z-index: 10000;
+        }
+        .toolbar-title { color: white; font-weight: bold; font-size: 15px; }
+        .toolbar-btns { display: flex; gap: 10px; }
+        .btn-prev {
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+        .btn-back { background: #95a5a6; color: white; }
+        .btn-download-now { background: #27ae60; color: white; }
+        .btn-browser-print { background: #3498db; color: white; }
+        .btn-prev:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* Container Dokumen A4 LapDok */
+        #print-content-target {
+            width: 210mm;
+            margin: 20px auto 40px auto;
+        }
+
+        .page-container {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            padding: 10mm 15mm;
+            margin-bottom: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            position: relative;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Kop Surat Resmi LapDok */
+        .print-main-header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            margin-bottom: 3mm;
+            padding-bottom: 5px;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .print-logo {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+        }
+        .print-header-text {
+            flex: 1;
+            text-align: center;
+        }
+        .print-main-header h1 {
+            font-size: 13px;
+            margin: 0;
+            text-transform: uppercase;
+            font-weight: 800;
+            color: #000;
+        }
+        .print-main-header h2 {
+            font-size: 10px;
+            margin: 2px 0 0 0;
+            color: #333;
+            font-weight: normal;
+        }
+        .print-title-doc {
+            font-size: 11px;
+            font-weight: bold;
+            color: #2980b9;
+            margin-top: 3px;
+            text-transform: uppercase;
+        }
+
+        /* Metadata Tabel LapDok */
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9.5px;
+            margin-bottom: 8px;
+        }
+        .meta-table td {
+            padding: 3.5px 6px;
+            border: 1px solid #999;
+            vertical-align: middle;
+        }
+        .meta-table .lbl {
+            background: #f2f4f4;
+            font-weight: bold;
+            width: 20%;
+            color: #2c3e50;
+        }
+        .meta-table .val {
+            width: 30%;
+            font-weight: 600;
+        }
+
+        /* Param Bar */
+        .param-bar {
+            background: #f9fbfd;
+            border: 1px solid #d4e6f1;
+            padding: 4px 8px;
+            font-size: 9px;
+            margin-bottom: 8px;
+            border-radius: 3px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .param-bar strong { color: #1f618d; }
+
+        /* Grid Multi-Foto LapDok (Standar 2 Kolom) */
+        .photo-doc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-grow: 1;
+        }
+        .photo-doc-item {
+            border: 1px solid #000;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            overflow: hidden;
+        }
+        .photo-doc-label {
+            background: #ecf0f1;
+            font-size: 8.5px;
+            font-weight: bold;
+            text-align: center;
+            padding: 3px;
+            border-bottom: 1px solid #000;
+            text-transform: uppercase;
+            color: #2c3e50;
+        }
+        .photo-doc-img-wrap {
+            width: 100%;
+            height: 60mm;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 2px;
+        }
+        .photo-doc-img-wrap img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
+        }
+
+        /* Box Catatan LapDok */
+        .notes-section {
+            border: 1px solid #000;
+            padding: 5px 8px;
+            font-size: 9px;
+            margin-bottom: 8px;
+            background: #fff;
+            min-height: 40px;
+        }
+        .notes-section strong {
+            display: block;
+            margin-bottom: 2px;
+            font-size: 8.5px;
+            text-transform: uppercase;
+            color: #2c3e50;
+        }
+
+        /* CSS CETAK / PDF BROWSER */
+        @media print {
+            body { background: white !important; padding: 0 !important; margin: 0 !important; }
+            .preview-toolbar { display: none !important; }
+            #print-content-target { width: 210mm !important; margin: 0 !important; padding: 0 !important; }
+            .page-container {
+                width: 210mm !important;
+                height: 297mm !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                padding: 10mm 14mm !important;
+                page-break-after: always !important;
+            }
+            .page-container:last-child {
+                page-break-after: auto !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="preview-toolbar" id="toolbar">
+    <div class="toolbar-title">Pratinjau Dokumen Operator IPA</div>
+    <div class="toolbar-btns">
+        <button class="btn-prev btn-back" onclick="window.history.back()">⬅️ Kembali</button>
+        <button class="btn-prev btn-browser-print" onclick="window.print()">🖨️ Cetak</button>
+        <button class="btn-prev btn-download-now" onclick="downloadPDF()">💾 Download PDF Sekarang</button>
+    </div>
+</div>
+
+<div id="print-content-target">
+    <div style="text-align:center; color:white; padding:50px;">Memuat pratinjau dokumen...</div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadPreview();
+    });
+
+    async function loadPreview() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const isDirect = urlParams.get('mode') === 'direct';
+        const isBatch = urlParams.get('batch') === 'true';
+        const shouldPrint = urlParams.get('action') === 'print';
+        const singleId = urlParams.get('id');
+
+        let reports = [];
+
+        if (isDirect) {
+            const dataStr = sessionStorage.getItem('direct_print_data');
+            if (dataStr) reports.push(JSON.parse(dataStr));
+        } else if (isBatch) {
+            const ids = JSON.parse(sessionStorage.getItem('selected_operator_print_ids') || '[]');
+            const history = await localforage.getItem('operator_history') || [];
+            reports = history.filter(h => ids.includes(String(h.id)));
+        } else if (singleId) {
+            const history = await localforage.getItem('operator_history') || [];
+            const found = history.find(h => String(h.id) === String(singleId));
+            if (found) reports.push(found);
+        } else {
+            const history = await localforage.getItem('operator_history') || [];
+            if (history.length > 0) reports.push(history[0]);
+        }
+
+        const target = document.getElementById('print-content-target');
+
+        if (reports.length === 0) {
+            target.innerHTML = `
+                <div style="background:white; padding:40px; text-align:center; border-radius:8px;">
+                    <h3>Tidak ada data laporan untuk dicetak</h3>
+                    <p style="color:#666; margin-top:10px;">Silakan pilih data dari halaman Riwayat.</p>
+                    <button class="btn-prev btn-browser-print" onclick="window.location.href='tampildata.html'" style="margin-top:10px;">Buka Riwayat</button>
+                </div>
+            `;
+            return;
+        }
+
+        target.innerHTML = reports.map(r => generatePageHtml(r)).join('');
+
+        if (shouldPrint) {
+            setTimeout(() => { window.print(); }, 500);
+        }
+    }
+
+    function generatePageHtml(r) {
+        const op = r.operator;
+        const pk = r.pekerjaan;
+        const photos = r.photos || {};
+
+        const slotKeys = Object.keys(photos);
+        const totalPhotos = slotKeys.length;
+
+        const renderHeaderHtml = (isFirstPage, pageNum, totalPages) => {
+            return `
+                <!-- Kop Surat LapDok -->
+                <div class="print-main-header">
+                    <img src="../valve/logo.png" class="print-logo" alt="Logo PDAM" onerror="this.style.display='none'">
+                    <div class="print-header-text">
+                        <h1>PERUSAHAAN UMUM DAERAH AIR MINUM AMERTA TORAYA</h1>
+                        <h2>Jl. Tedong Bonga, Kompleks Pasar Bolu, Tallunglipu, Kabupaten Toraja Utara</h2>
+                        <div class="print-title-doc">LEMBAR DOKUMENTASI & KINERJA OPERATOR (1 DOKUMEN)${totalPages > 1 ? ` - HALAMAN ${pageNum}/${totalPages}` : ''}</div>
+                    </div>
+                </div>
+
+                <!-- Tabel Identitas & Metadata -->
+                <table class="meta-table">
+                    <tr>
+                        <td class="lbl">Nama Operator</td>
+                        <td class="val">${op.nama || 'YULIUS BODA'}</td>
+                        <td class="lbl">Tanggal Kerja</td>
+                        <td class="val">${formatIndoDate(op.tanggal)}</td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">Shift Kerja</td>
+                        <td class="val">${op.shift || 'Shift Pagi'}</td>
+                        <td class="lbl">Target Realisasi</td>
+                        <td class="val" style="color:#27ae60; font-weight:bold;">1 Dokumen (Selesai)</td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">Uraian Tugas (Tupoksi)</td>
+                        <td class="val" colspan="3" style="font-weight:bold; color:#2c3e50;">
+                            ${pk.judul}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">Lokasi & GPS</td>
+                        <td class="val" colspan="3" style="font-size:9px; color:#555;">
+                            📍 ${op.gps || '-'} &nbsp;|&nbsp; ${op.alamat || 'Kabupaten Toraja Utara, Sulawesi Selatan'}
+                        </td>
+                    </tr>
+                </table>
+            `;
+        };
+
+        const renderNotesHtml = () => `
+            <!-- Catatan Realisasi -->
+            <div class="notes-section">
+                <strong>Catatan / Keterangan Realisasi Pekerjaan Saat Piket:</strong>
+                <div>${pk.catatan ? escapeHtml(pk.catatan) : 'Pekerjaan operasional telah dilaksanakan dengan baik sesuai dengan SOP dan ketentuan instruksi kerja.'}</div>
+            </div>
+        `;
+
+        if (totalPhotos === 0) {
+            return `
+                <div class="page-container">
+                    ${renderHeaderHtml(true, 1, 1)}
+                    <div style="padding: 35px; text-align: center; color: #999; font-style: italic; border: 1px dashed #ccc; margin: 15px 0;">
+                        (Tidak ada lampiran foto dokumentasi pada laporan ini)
+                    </div>
+                    ${renderNotesHtml()}
+                </div>
+            `;
+        }
+
+        const PHOTOS_PER_PAGE = 4;
+        const totalPages = Math.ceil(totalPhotos / PHOTOS_PER_PAGE);
+        let pagesHtml = '';
+
+        for (let p = 0; p < totalPages; p++) {
+            const pagePhotos = slotKeys.slice(p * PHOTOS_PER_PAGE, (p + 1) * PHOTOS_PER_PAGE);
+            const isLastPage = (p === totalPages - 1);
+
+            const photosGridHtml = pagePhotos.map((k, idxInPage) => {
+                const overallIdx = (p * PHOTOS_PER_PAGE) + idxInPage;
+                const item = photos[k];
+                return `
+                    <div class="photo-doc-item">
+                        <div class="photo-doc-label">FOTO ${overallIdx + 1}</div>
+                        <div class="photo-doc-img-wrap">
+                            <img src="${item.dataUrl}" alt="Bukti Foto ${overallIdx + 1}">
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            pagesHtml += `
+                <div class="page-container">
+                    ${renderHeaderHtml(p === 0, p + 1, totalPages)}
+
+                    <!-- Grid Multi-Foto Rekomendasi LapDok -->
+                    <div style="font-size: 9px; font-weight: bold; margin-bottom: 4px; color: #2c3e50; text-transform: uppercase;">
+                        📸 BUKTI FOTO DOKUMENTASI OPERASIONAL ${totalPages > 1 ? `(BAGIAN ${p + 1} DARI ${totalPages})` : ''}:
+                    </div>
+                    <div class="photo-doc-grid">
+                        ${photosGridHtml}
+                    </div>
+
+                    ${isLastPage ? renderNotesHtml() : ''}
+                </div>
+            `;
+        }
+
+        return pagesHtml;
+    }
+
+    function getSlotLabel(jobKey, slotId, index) {
+        return `FOTO ${index + 1}`;
+    }
+
+    function formatIndoDate(dateStr) {
+        if (!dateStr) return '-';
+        const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+        const p = dateStr.split('-');
+        if (p.length === 3) {
+            return `${parseInt(p[2],10)} ${months[parseInt(p[1],10)-1]} ${p[0]}`;
+        }
+        return dateStr;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.innerText = text;
+        return div.innerHTML.replace(/\n/g, '<br>');
+    }
+
+    function downloadPDF() {
+        const element = document.getElementById('print-content-target');
+        const opt = {
+            margin:       [0, 0, 0, 0],
+            filename:     `Dokumentasi_Operator_IPA_${new Date().toISOString().slice(0,10)}.pdf`,
+            image:        { type: 'jpeg', quality: 0.95 },
+            html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        const btn = document.querySelector('.btn-download-now');
+        const origText = btn.innerHTML;
+        btn.innerHTML = '⏳ Menyiapkan PDF...';
+        btn.disabled = true;
+
+        html2pdf().set(opt).from(element).save().then(() => {
+            btn.innerHTML = origText;
+            btn.disabled = false;
+        }).catch(err => {
+            console.error(err);
+            alert("Gagal mengunduh file secara otomatis. Silakan gunakan tombol 'Cetak' lalu pilih 'Simpan sebagai PDF'.");
+            btn.innerHTML = origText;
+            btn.disabled = false;
+        });
+    }
+</script>
+</body>
+</html>

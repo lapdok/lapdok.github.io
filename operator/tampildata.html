@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riwayat Laporan Operator IPA</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2c3e50">
+    <link rel="icon" type="image/png" href="../assets/icons/icon-192.png">
+
+    <!-- Script & Style LapDok -->
+    <link rel="stylesheet" href="../css/print-pdf.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+
+    <style>
+        .filter-select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .btn-edit-badge {
+            background: #f39c12;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="index.html">📝 Form Operator</a>
+    <a href="tampildata.html" class="active">📂 Riwayat Laporan</a>
+</nav>
+
+<div class="container">
+    <div class="filter-card">
+        <div style="margin-bottom: 10px; font-weight: bold; color: #2c3e50; font-size: 13px;">
+            🗂️ RIWAYAT DOKUMEN OPERATOR IPA:
+        </div>
+
+        <select id="filter-job" class="filter-select" onchange="renderHistoryList()">
+            <option value="">Semua Pekerjaan (5 Pekerjaan KPI 1 Dokumen)</option>
+            <option value="KIMIA">1. Mencampur Bahan Kimia sesuai dosis dan prosedur</option>
+            <option value="POMPA">2. Pelaksanaan Operasional Pompa</option>
+            <option value="BERSIH_IPA">3. Membersihkan IPA, Intake, & Sedimen</option>
+            <option value="FLOW_METER">4. Laporan Flow Meter Air Baku & Distribusi</option>
+            <option value="RESERVOIR">5. Melakukan Pengisian Reservoir</option>
+        </select>
+
+        <button class="btn-action btn-print" id="print-btn" onclick="triggerPrintBatch()" disabled>
+            🖨️ Cetak Terpilih (0)
+        </button>
+        <button class="btn-action btn-download" id="preview-btn" onclick="triggerPreviewBatch()" disabled>
+            📄 Pratinjau Dokumen PDF (0)
+        </button>
+    </div>
+
+    <div id="history-list"></div>
+</div>
+
+<script>
+    let allReports = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadReports();
+    });
+
+    async function loadReports() {
+        try {
+            allReports = await localforage.getItem('operator_history') || [];
+            renderHistoryList();
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    function renderHistoryList() {
+        const listDiv = document.getElementById('history-list');
+        const jobFilter = document.getElementById('filter-job').value;
+
+        let filtered = allReports.filter(r => {
+            if (jobFilter && r.pekerjaan.kode !== jobFilter) return false;
+            return true;
+        });
+
+        if (filtered.length === 0) {
+            listDiv.innerHTML = `
+                <div style="background: white; padding: 30px; text-align: center; border-radius: 8px; border: 1px solid #ddd; color: #7f8c8d;">
+                    <div style="font-size: 32px; margin-bottom: 8px;">📂</div>
+                    <div style="font-weight: bold; font-size: 12px; color: #2c3e50;">Belum Ada Laporan Operator Tersimpan</div>
+                    <p style="font-size: 11px; margin-top: 5px;">Silakan buat dan simpan laporan pekerjaan melalui form input operator.</p>
+                    <a href="index.html" style="display: inline-block; margin-top: 12px; background: #3498db; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 11px;">
+                        + Buat Laporan Baru
+                    </a>
+                </div>
+            `;
+            updateSelectedCount();
+            return;
+        }
+
+        listDiv.innerHTML = filtered.map(r => {
+            const photos = Object.values(r.photos || {});
+            const firstPhotoUrl = photos.length > 0 ? photos[0].dataUrl : null;
+
+            return `
+                <div class="report-card-wrapper">
+                    <input type="checkbox" class="report-cb" value="${r.id}" onchange="updateSelectedCount()" style="width: 18px; height: 18px; cursor: pointer;">
+                    
+                    <div class="report-card-preview" style="position: relative;">
+                        <button class="btn-del" onclick="deleteReport(${r.id})" title="Hapus Laporan">Hapus</button>
+                        
+                        <div class="report-card-content" onclick="openSinglePreview(${r.id})">
+                            <div class="report-thumb">
+                                ${firstPhotoUrl ? `<img src="${firstPhotoUrl}" alt="Thumb">` : `<span class="no-thumb">📷</span>`}
+                            </div>
+                            
+                            <div class="report-details">
+                                <div class="report-title">${r.pekerjaan.judul}</div>
+                                <div class="report-items-preview">
+                                    <div class="preview-item-row">📅 <b>${formatIndoDate(r.operator.tanggal)}</b> &bull; ${r.operator.shift}</div>
+                                    <div class="preview-item-row">👤 Petugas: ${r.operator.nama}</div>
+                                    <div class="preview-item-row" style="color: #27ae60; font-weight: bold;">📸 ${photos.length} Foto Dilampirkan (1 Dokumen)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 8px; display: flex; justify-content: flex-end; gap: 6px;">
+                            <button class="btn-edit-badge" onclick="editReport(${r.id})">✏️ Edit</button>
+                            <button class="btn-edit-badge" style="background:#2980b9;" onclick="openSinglePreview(${r.id})">🖨️ Cetak</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+        const checked = document.querySelectorAll('.report-cb:checked');
+        const count = checked.length;
+        
+        const printBtn = document.getElementById('print-btn');
+        const prevBtn = document.getElementById('preview-btn');
+
+        printBtn.disabled = count === 0;
+        printBtn.innerText = `🖨️ Cetak Terpilih (${count})`;
+
+        prevBtn.disabled = count === 0;
+        prevBtn.innerText = `📄 Pratinjau Dokumen PDF (${count})`;
+    }
+
+    function triggerPrintBatch() {
+        const checked = document.querySelectorAll('.report-cb:checked');
+        const ids = Array.from(checked).map(c => c.value);
+        if (ids.length === 0) return;
+
+        sessionStorage.setItem('selected_operator_print_ids', JSON.stringify(ids));
+        window.location.href = "print-preview.html?batch=true&action=print";
+    }
+
+    function triggerPreviewBatch() {
+        const checked = document.querySelectorAll('.report-cb:checked');
+        const ids = Array.from(checked).map(c => c.value);
+        if (ids.length === 0) return;
+
+        sessionStorage.setItem('selected_operator_print_ids', JSON.stringify(ids));
+        window.location.href = "print-preview.html?batch=true";
+    }
+
+    function openSinglePreview(id) {
+        window.location.href = `print-preview.html?id=${id}`;
+    }
+
+    function editReport(id) {
+        window.location.href = `index.html?edit=${id}`;
+    }
+
+    async function deleteReport(id) {
+        if (confirm("Hapus dokumen laporan kinerja operator ini?")) {
+            allReports = allReports.filter(r => String(r.id) !== String(id));
+            await localforage.setItem('operator_history', allReports);
+            renderHistoryList();
+        }
+    }
+
+    function formatIndoDate(dateStr) {
+        if (!dateStr) return '-';
+        const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+        const p = dateStr.split('-');
+        if (p.length === 3) {
+            return `${parseInt(p[2],10)} ${months[parseInt(p[1],10)-1]} ${p[0]}`;
+        }
+        return dateStr;
+    }
+</script>
+</body>
+</html>
