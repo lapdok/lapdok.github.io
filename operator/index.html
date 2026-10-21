@@ -1531,11 +1531,11 @@
 
     <!-- PWA: Service Worker & Install Prompt -->
     <script>
-        // ── Service Worker Registration ──
+        // ── Service Worker Registration (Dedicated SW untuk Operator IPA) ──
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js', { scope: './' })
-                    .then(reg => console.log('[SW] Operator IPA SW terdaftar, scope:', reg.scope))
+                    .then(reg => console.log('[SW] Operator IPA aktif via dedicated SW, scope:', reg.scope))
                     .catch(err => console.warn('[SW] Gagal mendaftar:', err));
             });
         }

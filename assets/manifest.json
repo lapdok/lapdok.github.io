@@ -2,10 +2,12 @@
   "name": "Dokumentasi Kinerja",
   "short_name": "LapDok",
   "description": "Dokumentasi Kinerja",
+  "id": "/",
   "start_url": "../index.html",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#00d2ff", 
+  "theme_color": "#00d2ff",
   "icons": [
     {
       "src": "icons/icon-512.png",

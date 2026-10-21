@@ -1,7 +1,7 @@
-﻿// Service Worker - Operator IPA
+// Service Worker - Operator IPA
 // Cache-First untuk assets, Network-First untuk halaman
 
-const CACHE_NAME = 'operator-ipa-v1';
+const CACHE_NAME = 'operator-ipa-v2';
 const STATIC_ASSETS = [
     './',
     './index.html',

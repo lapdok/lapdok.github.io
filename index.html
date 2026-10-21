@@ -243,6 +243,14 @@
                 }
             }
         });
+        // Service Worker Registration (Root, scope: seluruh origin)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                    .then(reg => console.log('[SW] LapDok root SW aktif, scope:', reg.scope))
+                    .catch(err => console.warn('[SW] Gagal mendaftar:', err));
+            });
+        }
     </script>
 </body>
 </html>
