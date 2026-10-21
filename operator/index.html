@@ -6,8 +6,13 @@
     <title>Input Laporan Operator IPA</title>
     
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#2c3e50">
-    <link rel="icon" type="image/png" href="../assets/icons/icon-192.png">
+    <meta name="theme-color" content="#0284c7">
+    <link rel="icon" type="image/png" href="./icon-192.png">
+    <link rel="apple-touch-icon" href="./icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Operator IPA">
+    <meta name="mobile-web-app-capable" content="yes">
 
     <!-- Leaflet JS & CSS (Peta LapDok) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -557,10 +562,20 @@
 </head>
 <body>
 
+    <!-- Banner Install PWA -->
+    <div id="pwa-install-banner" style="display:none; background: linear-gradient(135deg, #0284c7, #0ea5e9); color: white; padding: 10px 16px; text-align: center; font-size: 12px; font-weight: bold; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.3); align-items: center; justify-content: space-between;">
+        <span>📲 Install Operator IPA sebagai aplikasi</span>
+        <div style="display:flex; gap:8px; justify-content:center; margin-top:6px;">
+            <button id="pwa-install-btn" onclick="installPWA()" style="background: white; color: #0284c7; border: none; padding: 6px 16px; border-radius: 20px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">⬇️ Install</button>
+            <button onclick="document.getElementById('pwa-install-banner').style.display='none'" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 6px 12px; border-radius: 20px; font-size: 11px; cursor: pointer;">✕ Tutup</button>
+        </div>
+    </div>
+
     <!-- Navigasi Operator -->
     <nav class="navbar">
         <a href="index.html" class="active">📝 Form Operator</a>
         <a href="tampildata.html">📂 Riwayat Laporan</a>
+        <button id="pwa-nav-btn" onclick="installPWA()" title="Install sebagai App" style="display:none; background: rgba(0,210,255,0.2); color: #00d2ff; border: 1px solid #00d2ff; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s;">⬇️ Install</button>
     </nav>
 
     <div class="container">
@@ -1512,6 +1527,58 @@
                 console.error(e);
             }
         }
+    </script>
+
+    <!-- PWA: Service Worker & Install Prompt -->
+    <script>
+        // ── Service Worker Registration ──
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js', { scope: './' })
+                    .then(reg => console.log('[SW] Operator IPA SW terdaftar, scope:', reg.scope))
+                    .catch(err => console.warn('[SW] Gagal mendaftar:', err));
+            });
+        }
+
+        // ── PWA Install Prompt ──
+        let deferredPrompt = null;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Tampilkan banner dan tombol nav
+            const banner = document.getElementById('pwa-install-banner');
+            const navBtn = document.getElementById('pwa-nav-btn');
+            if (banner) banner.style.display = 'flex';
+            if (navBtn) navBtn.style.display = 'inline-block';
+        });
+
+        function installPWA() {
+            if (!deferredPrompt) {
+                // Fallback: tampilkan instruksi manual
+                alert('Untuk menginstall:\n📱 Android: Ketuk menu browser (⋮) → "Tambahkan ke layar utama"\n🍎 iOS: Ketuk Bagikan (⬆) → "Tambahkan ke Layar Utama"');
+                return;
+            }
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((result) => {
+                if (result.outcome === 'accepted') {
+                    console.log('[PWA] Pengguna menerima install');
+                    document.getElementById('pwa-install-banner').style.display = 'none';
+                    document.getElementById('pwa-nav-btn').style.display = 'none';
+                }
+                deferredPrompt = null;
+            });
+        }
+
+        // Sembunyikan banner setelah berhasil di-install
+        window.addEventListener('appinstalled', () => {
+            const banner = document.getElementById('pwa-install-banner');
+            const navBtn = document.getElementById('pwa-nav-btn');
+            if (banner) banner.style.display = 'none';
+            if (navBtn) navBtn.style.display = 'none';
+            deferredPrompt = null;
+            console.log('[PWA] Operator IPA berhasil diinstall!');
+        });
     </script>
 </body>
 </html>
