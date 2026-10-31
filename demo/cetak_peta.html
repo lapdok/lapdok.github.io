@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cetak Peta Topografi Sebaran Titik Pelanggan — PERUMDAM Amerta Toraya</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+  <!-- Leaflet JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+  <!-- Konfigurasi Project -->
+  <script src="js/config.js"></script>
+
+  <style>
+    /* ============================================================
+       RESET & BASE STYLES
+    ============================================================ */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+      background: #f1f5f9;
+      color: #1e293b;
+      overflow-x: hidden;
+    }
+
+    /* ============================================================
+       NAVBAR (HANYA LAYAR)
+    ============================================================ */
+    .app-navbar {
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0 16px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+
+    .nav-container {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 52px;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 15px;
+      color: #0284c7;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 6px;
+    }
+
+    .nav-item {
+      text-decoration: none;
+      padding: 7px 14px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .nav-item:hover {
+      color: #0284c7;
+      background-color: #f1f5f9;
+    }
+
+    .nav-item.active {
+      color: #0284c7;
+      background-color: #e0f2fe;
+    }
+
+    /* ============================================================
+       CONTROLS BAR (HANYA LAYAR)
+    ============================================================ */
+    .controls-bar {
+      max-width: 1300px;
+      margin: 14px auto 10px auto;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .realtime-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #475569;
+    }
+
+    .pulse-dot {
+      width: 9px;
+      height: 9px;
+      background: #22c55e;
+      border-radius: 50%;
+      animation: pulseAnim 2s infinite;
+    }
+
+    @keyframes pulseAnim {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.35; transform: scale(0.85); }
+    }
+
+    #syncStatus {
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .spacer { flex: 1; }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 15px;
+      border-radius: 7px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+      transition: all 0.15s ease;
+    }
+
+    .btn-refresh {
+      background: #ffffff;
+      border-color: #cbd5e1;
+      color: #334155;
+    }
+    .btn-refresh:hover {
+      border-color: #0284c7;
+      color: #0284c7;
+    }
+
+    .btn-fit {
+      background: #f8fafc;
+      border-color: #94a3b8;
+      color: #0f172a;
+    }
+    .btn-fit:hover {
+      background: #e2e8f0;
+    }
+
+    .btn-print {
+      background: #0284c7;
+      color: white;
+    }
+    .btn-print:hover {
+      background: #0369a1;
+    }
+
+    /* ============================================================
+       TOPOGRAFI CONTAINER (SCREEN VIEW)
+    ============================================================ */
+    .page-wrapper {
+      padding: 8px 16px 24px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .topografi-container {
+      width: 100%;
+      max-width: 1300px;
+      height: calc(100vh - 145px);
+      min-height: 540px;
+      background: #ffffff;
+      border: 2px solid #0f172a;
+      display: flex;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+      position: relative;
+    }
+
+    /* ============================================================
+       MAP COLUMN
+    ============================================================ */
+    .map-column {
+      flex: 1;
+      height: 100%;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      border-right: 2px solid #0f172a;
+      background: #e2e8f0;
+    }
+
+    #printMap {
+      width: 100%;
+      height: 100%;
+      background: #e2e8f0;
+    }
+
+    /* Map Mode Buttons */
+    .map-mode-bar {
+      position: absolute;
+      top: 10px;
+      left: 60px;
+      z-index: 500;
+      display: flex;
+      gap: 4px;
+      background: rgba(255,255,255,0.95);
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 4px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    .mode-btn {
+      padding: 5px 12px;
+      border-radius: 4px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: #475569;
+      transition: all 0.15s;
+    }
+
+    .mode-btn:hover { background: #e2e8f0; color: #0f172a; }
+    .mode-btn.active { background: #0284c7; color: white; }
+
+    /* AutoCAD High-Contrast Line Mode */
+    .cad-mode-active .leaflet-tile-pane {
+      filter: invert(100%) hue-rotate(180deg) contrast(140%) grayscale(50%);
+    }
+
+    /* ============================================================
+       SIMBOL PIN PELANGGAN (LEAFLET DIVICON)
+    ============================================================ */
+    .leaflet-div-icon {
+      background: transparent !important;
+      border: none !important;
+    }
+
+    .custom-pin-wrapper {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    .marker-number-pin {
+      width: 24px;
+      height: 24px;
+      background: #ef4444 !important;
+      color: #ffffff !important;
+      border-radius: 50% !important;
+      border: 2px solid #ffffff !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-size: 11px !important;
+      font-weight: 800 !important;
+      line-height: 1 !important;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.45) !important;
+      cursor: pointer;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      animation: pinDrop 0.25s ease-out;
+    }
+
+    @keyframes pinDrop {
+      from { transform: translateY(-8px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* ============================================================
+       LEGEND COLUMN (KANAN SEPERTI PETA TOPOGRAFI RESMI)
+    ============================================================ */
+    .legend-column {
+      width: 260px;
+      min-width: 260px;
+      max-width: 260px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow-y: auto;
+    }
+
+    .legend-box {
+      padding: 8px 12px;
+      border-bottom: 1.5px solid #0f172a;
+      font-size: 11px;
+    }
+
+    .legend-box:last-child {
+      border-bottom: none;
+    }
+
+    /* 1. Judul Laporan Peta */
+    .legend-title-box {
+      text-align: center;
+      background: #f8fafc;
+      padding: 9px 10px 8px;
+    }
+
+    .legend-main-title {
+      font-size: 10.5px;
+      font-weight: 900;
+      color: #0f172a;
+      text-transform: uppercase;
+      line-height: 1.25;
+      letter-spacing: 0.3px;
+    }
+
+    .legend-instansi-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: #0284c7;
+      margin-top: 3px;
+      text-transform: uppercase;
+    }
+
+    .legend-sub-title {
+      font-size: 8.5px;
+      font-weight: 700;
+      color: #64748b;
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    /* 2. Kompas Arah Mata Angin */
+    .compass-box {
+      text-align: center;
+      padding: 6px 10px;
+    }
+
+    .compass-svg {
+      width: 44px;
+      height: 44px;
+      margin: 0 auto 1px;
+      display: block;
+    }
+
+    .compass-label {
+      font-size: 9px;
+      font-weight: 800;
+      color: #475569;
+      letter-spacing: 0.5px;
+    }
+
+    /* 3. KOTAK SKALA PETA TOPOGRAFI OTOMATIS */
+    .scale-box {
+      background: #fafafa;
+      text-align: center;
+      padding: 7px 10px;
+    }
+
+    .scale-heading {
+      font-size: 9.5px;
+      font-weight: 800;
+      color: #0f172a;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 3px;
+    }
+
+    .scale-ratio-text {
+      font-size: 12.5px;
+      font-weight: 900;
+      color: #0284c7;
+      letter-spacing: 0.8px;
+      font-family: 'Courier New', Courier, monospace;
+      margin-bottom: 5px;
+    }
+
+    /* Batang Skala Grafis (Graphic Scale Bar) */
+    .scale-graphic-wrapper {
+      margin: 4px auto 2px;
+      width: 190px;
+    }
+
+    .scale-bar-ruler {
+      display: flex;
+      height: 6px;
+      border: 1px solid #0f172a;
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    .scale-bar-segment {
+      flex: 1;
+      height: 100%;
+    }
+    .scale-bar-segment:nth-child(odd) {
+      background: #0f172a;
+    }
+    .scale-bar-segment:nth-child(even) {
+      background: #ffffff;
+    }
+
+    .scale-bar-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 8px;
+      font-weight: 700;
+      color: #334155;
+      margin-top: 2px;
+      font-family: monospace;
+    }
+
+    .scale-note {
+      font-size: 8px;
+      color: #64748b;
+      margin-top: 3px;
+      font-style: italic;
+    }
+
+    /* 4. Heading Bagian */
+    .legend-heading {
+      font-size: 9.5px;
+      font-weight: 800;
+      color: #0f172a;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 5px;
+      border-left: 3px solid #0284c7;
+      padding-left: 6px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 3px;
+      line-height: 1.35;
+    }
+
+    .info-row span.label {
+      color: #64748b;
+      font-weight: 600;
+      font-size: 10px;
+    }
+
+    .info-row span.value {
+      color: #0f172a;
+      font-weight: 700;
+      font-size: 10px;
+      text-align: right;
+    }
+
+    /* 5. Legenda Simbol */
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 5px;
+      line-height: 1.25;
+    }
+
+    .legend-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .legend-icon-badge {
+      width: 19px;
+      height: 19px;
+      background: #ef4444;
+      color: white;
+      border-radius: 50%;
+      border: 1.5px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9.5px;
+      font-weight: 800;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      flex-shrink: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    .legend-color-box {
+      width: 20px;
+      height: 11px;
+      border-radius: 2px;
+      border: 1px solid #64748b;
+      flex-shrink: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    .legend-item-text {
+      font-size: 10px;
+      color: #1e293b;
+    }
+
+    .legend-item-sub {
+      font-size: 8.5px;
+      color: #64748b;
+    }
+
+    /* 6. Footer Resmi */
+    .legend-footer {
+      padding: 6px 10px;
+      background: #f8fafc;
+      font-size: 8px;
+      color: #64748b;
+      text-align: center;
+      line-height: 1.35;
+    }
+
+    /* ============================================================
+       PRINT STYLES — PAS PERSIS 1 HALAMAN A4 LANDSCAPE
+    ============================================================ */
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 5mm; /* Margin tipis 5mm sekeliling halaman */
+      }
+
+      *, *::before, *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      html, body {
+        width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        background: #ffffff !important;
+      }
+
+      /* Sembunyikan elemen navigasi & tombol saat dicetak */
+      .no-print,
+      .app-navbar,
+      .controls-bar,
+      .map-mode-bar {
+        display: none !important;
+      }
+
+      .page-wrapper {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+      }
+
+      /* Tinggi A4 Landscape = 210mm. Minus 2x5mm margin = 200mm.
+         Tinggi container disetel 196mm agar PASTI aman 1 halaman */
+      .topografi-container {
+        width: 100% !important;
+        height: 196mm !important;
+        max-height: 196mm !important;
+        border: 2px solid #000000 !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        page-break-inside: avoid !important;
+        page-break-after: avoid !important;
+        page-break-before: avoid !important;
+        overflow: hidden !important;
+      }
+
+      .map-column {
+        flex: 1 !important;
+        height: 100% !important;
+        max-height: 196mm !important;
+        border-right: 2px solid #000000 !important;
+      }
+
+      #printMap {
+        width: 100% !important;
+        height: 100% !important;
+      }
+
+      .legend-column {
+        width: 255px !important;
+        min-width: 255px !important;
+        max-width: 255px !important;
+        height: 100% !important;
+        max-height: 196mm !important;
+        border-left: none !important;
+        overflow: hidden !important;
+      }
+
+      .legend-box {
+        border-bottom: 1.5px solid #000000 !important;
+        padding: 6px 10px !important;
+      }
+
+      .scale-bar-ruler {
+        border: 1px solid #000000 !important;
+      }
+
+      .scale-bar-segment:nth-child(odd) {
+        background: #000000 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===================== NAVBAR (LAYAR) ===================== -->
+  <nav class="app-navbar no-print">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <span>💧</span>
+        <span>PERUMDAM Amerta Toraya</span>
+      </div>
+      <div class="nav-links">
+        <a href="index.html" class="nav-item">
+          <span>📍</span> Form &amp; Peta
+        </a>
+        <a href="cetak_peta.html" class="nav-item active">
+          <span>🗺️</span> Cetak Peta
+        </a>
+        <a href="cetak_data.html" class="nav-item">
+          <span>📋</span> Cetak Data
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===================== CONTROLS BAR (LAYAR) ===================== -->
+  <div class="controls-bar no-print">
+    <div class="realtime-indicator">
+      <div class="pulse-dot"></div>
+      <span id="syncStatus">Menghubungi Google Spreadsheet...</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="action-buttons">
+      <button type="button" class="btn btn-refresh" onclick="loadRealtimeData()" title="Muat ulang data terbaru dari Google Spreadsheet">
+        <span>🔄</span> Muat Ulang Data
+      </button>
+      <button type="button" class="btn btn-fit" onclick="zoomFitAllCustomerPoints()" title="Paskan peta mengapit semua koordinat pelanggan">
+        <span>🎯</span> Paskan Semua Titik
+      </button>
+      <button type="button" class="btn btn-print" onclick="window.print()" title="Cetak atau simpan peta ke dokumen PDF">
+        <span>🖨️</span> Cetak Peta (PDF)
+      </button>
+    </div>
+  </div>
+
+  <!-- ===================== KERTAS PETA TOPOGRAFI ===================== -->
+  <div class="page-wrapper">
+    <div class="topografi-container">
+
+      <!-- KOLOM PETA (KIRI) -->
+      <div class="map-column">
+        <!-- Switcher Mode Peta (Layar) -->
+        <div class="map-mode-bar no-print">
+          <button type="button" class="mode-btn active" id="btnModeSat" onclick="switchMapLayer('satellite')">🛰️ Satelit</button>
+          <button type="button" class="mode-btn" id="btnModeRoad" onclick="switchMapLayer('roadmap')">🏢 Jalan &amp; Bangunan</button>
+          <button type="button" class="mode-btn" id="btnModeCad" onclick="switchMapLayer('autocad')">📐 AutoCAD (Garis)</button>
+        </div>
+
+        <!-- Wadah Leaflet Map -->
+        <div id="printMap"></div>
+      </div>
+
+      <!-- KOLOM LEGENDA TOPOGRAFI (KANAN) -->
+      <div class="legend-column">
+
+        <!-- 1. Judul Laporan Peta Topografi -->
+        <div class="legend-box legend-title-box">
+          <div class="legend-main-title">LAPORAN DATA CALON PELANGGAN SAMBUNGAN BARU</div>
+          <div class="legend-instansi-title">PERUMDAM Amerta Toraya</div>
+          <div class="legend-sub-title">PETA TOPOGRAFI SEBARAN TITIK KOORDINAT</div>
+        </div>
+
+        <!-- 2. Petunjuk Arah Utara -->
+        <div class="legend-box compass-box">
+          <svg class="compass-svg" viewBox="0 0 100 100">
+            <polygon points="50,5 58,45 50,40" fill="#0f172a" />
+            <polygon points="50,5 42,45 50,40" fill="#ef4444" />
+            <polygon points="50,95 58,55 50,60" fill="#94a3b8" />
+            <polygon points="50,95 42,55 50,60" fill="#cbd5e1" />
+            <polygon points="5,50 45,58 40,50" fill="#cbd5e1" />
+            <polygon points="5,50 45,42 40,50" fill="#94a3b8" />
+            <polygon points="95,50 55,58 60,50" fill="#94a3b8" />
+            <polygon points="95,50 55,42 60,50" fill="#cbd5e1" />
+            <circle cx="50" cy="50" r="4" fill="#0f172a" />
+            <text x="50" y="16" font-size="12" font-weight="900" fill="#ef4444" text-anchor="middle">U</text>
+          </svg>
+          <div class="compass-label">PETUNJUK ARAH UTARA</div>
+        </div>
+
+        <!-- 3. KOTAK SKALA PETA (TERHITUNG OTOMATIS) -->
+        <div class="legend-box scale-box">
+          <div class="scale-heading">SKALA PETA</div>
+          <div class="scale-ratio-text" id="scaleRatioDisplay">1 : 10.000</div>
+
+          <!-- Skala Batang Grafis Dinamis -->
+          <div class="scale-graphic-wrapper">
+            <div class="scale-bar-ruler">
+              <div class="scale-bar-segment"></div>
+              <div class="scale-bar-segment"></div>
+              <div class="scale-bar-segment"></div>
+              <div class="scale-bar-segment"></div>
+            </div>
+            <div class="scale-bar-labels">
+              <span>0</span>
+              <span id="scaleLabel1">250m</span>
+              <span id="scaleLabel2">500m</span>
+              <span id="scaleLabel3">750m</span>
+              <span id="scaleLabel4">1 km</span>
+            </div>
+          </div>
+          <div class="scale-note">* Skala terhitung otomatis sesuai tampilan cetak</div>
+        </div>
+
+        <!-- 4. Wilayah Pendataan -->
+        <div class="legend-box">
+          <div class="legend-heading">Wilayah Pendataan</div>
+          <div class="info-row">
+            <span class="label">Instansi:</span>
+            <span class="value">PERUMDAM Amerta Toraya</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Wilayah:</span>
+            <span class="value">Kabupaten Toraja Utara</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Proyeksi:</span>
+            <span class="value">Geografis WGS 84 (GPS)</span>
+          </div>
+        </div>
+
+        <!-- 5. Legenda Simbol -->
+        <div class="legend-box">
+          <div class="legend-heading">Legenda Simbol</div>
+
+          <div class="legend-item">
+            <div class="legend-icon-badge">1</div>
+            <div>
+              <div class="legend-item-text"><strong>Titik Calon Pelanggan</strong></div>
+              <div class="legend-item-sub">Nomor urut pendaftaran</div>
+            </div>
+          </div>
+
+          <div class="legend-item">
+            <div class="legend-color-box" style="background:#3b82f6;"></div>
+            <div>
+              <div class="legend-item-text">Jaringan Jalan Utama</div>
+            </div>
+          </div>
+
+          <div class="legend-item">
+            <div class="legend-color-box" style="background:#64748b;"></div>
+            <div>
+              <div class="legend-item-text">Blok Bangunan / Atap</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. Informasi Data -->
+        <div class="legend-box">
+          <div class="legend-heading">Informasi Data</div>
+          <div class="info-row">
+            <span class="label">Total Terdata:</span>
+            <span class="value" id="legendTotalData">0 Pelanggan</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Status Peta:</span>
+            <span class="value" id="legendCakupan">Semua Titik Terpetakan</span>
+          </div>
+        </div>
+
+        <!-- 7. Footer Resmi -->
+        <div class="legend-footer">
+          Sistem Informasi Geografis Pelanggan Air Minum<br>
+          PERUMDAM Amerta Toraya &bull; Toraja Utara
+        </div>
+
+      </div><!-- /legend-column -->
+    </div><!-- /topografi-container -->
+  </div><!-- /page-wrapper -->
+
+  <!-- ============================================================
+       LOGIKA JAVASCRIPT
+  ============================================================ */ -->
+  <script>
+    let allData = [];
+    let printMap = null;
+    let markersLayer = null;
+    let currentMode = 'satellite';
+    let mapHasBeenFitted = false;
+
+    // Koordinat Pusat Toraja Utara (Rantepao)
+    const TORAJA_UTARA_LAT = -2.97190;
+    const TORAJA_UTARA_LNG = 119.89596;
+
+    // Layer Map Options (Google Maps Engine)
+    let layerSatellite = null;
+    let layerRoadmap = null;
+
+    /* ------------------------------------------------------------
+       Inisialisasi Peta Leaflet
+    ------------------------------------------------------------ */
+    function initPrintMap() {
+      layerSatellite = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+        attribution: '&copy; Google Maps'
+      });
+
+      layerRoadmap = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+        attribution: '&copy; Google Maps'
+      });
+
+      printMap = L.map('printMap', {
+        center: [TORAJA_UTARA_LAT, TORAJA_UTARA_LNG],
+        zoom: 14,
+        zoomControl: true,
+        layers: [layerSatellite]
+      });
+
+      // Tambahkan scale control Leaflet bawaan di kiri bawah peta
+      L.control.scale({
+        imperial: false,
+        metric: true,
+        position: 'bottomleft'
+      }).addTo(printMap);
+
+      markersLayer = L.featureGroup().addTo(printMap);
+
+      // Event listener: hitung ulang skala peta setiap kali peta digeser atau di-zoom
+      printMap.on('moveend zoomend resize', function() {
+        calculateAndDisplayScale();
+      });
+
+      // Jeda agar ukuran DOM siap
+      setTimeout(() => {
+        printMap.invalidateSize();
+        calculateAndDisplayScale();
+      }, 200);
+    }
+
+    /* ------------------------------------------------------------
+       Ganti Mode Tampilan Peta
+    ------------------------------------------------------------ */
+    function switchMapLayer(mode) {
+      if (!printMap) return;
+      currentMode = mode;
+      const mapContainer = document.querySelector('.topografi-container');
+
+      document.getElementById('btnModeSat').classList.toggle('active', mode === 'satellite');
+      document.getElementById('btnModeRoad').classList.toggle('active', mode === 'roadmap');
+      document.getElementById('btnModeCad').classList.toggle('active', mode === 'autocad');
+
+      printMap.removeLayer(layerSatellite);
+      printMap.removeLayer(layerRoadmap);
+
+      if (mode === 'satellite') {
+        mapContainer.classList.remove('cad-mode-active');
+        layerSatellite.addTo(printMap);
+      } else if (mode === 'roadmap') {
+        mapContainer.classList.remove('cad-mode-active');
+        layerRoadmap.addTo(printMap);
+      } else if (mode === 'autocad') {
+        mapContainer.classList.add('cad-mode-active');
+        layerRoadmap.addTo(printMap);
+      }
+
+      setTimeout(() => {
+        printMap.invalidateSize();
+        calculateAndDisplayScale();
+      }, 100);
+    }
+
+    /* ------------------------------------------------------------
+       Normalisasi & Sanitasi Koordinat GPS
+    ------------------------------------------------------------ */
+    function sanitizeCoordinate(val, type) {
+      if (val === null || val === undefined || val === '') return '';
+      let clean = String(val).replace(/^'/, '').trim().replace(',', '.');
+      let num = parseFloat(clean);
+      if (isNaN(num)) return clean;
+
+      // Pulihkan jika tanda titik desimal terhapus oleh spreadsheet (locale Indonesia)
+      if (!clean.includes('.') && Math.abs(num) > 1000) {
+        num = num / 1000000;
+      }
+      return num.toFixed(6);
+    }
+
+    /* ------------------------------------------------------------
+       Update Titik Marker Calon Pelanggan di Peta
+       Mencakup SEMUA titik koordinat pelanggan dari spreadsheet
+    ------------------------------------------------------------ */
+    function updateMapMarkers(data) {
+      if (!printMap || !markersLayer) return;
+
+      markersLayer.clearLayers();
+      const validPoints = [];
+
+      data.forEach((row, index) => {
+        const rawLat = (row.latitude !== undefined && row.latitude !== "") ? row.latitude : row.lat;
+        const rawLng = (row.longitude !== undefined && row.longitude !== "") ? row.longitude : row.lng;
+
+        const cleanLat = sanitizeCoordinate(rawLat, 'lat');
+        const cleanLng = sanitizeCoordinate(rawLng, 'lng');
+
+        const lat = parseFloat(cleanLat);
+        const lng = parseFloat(cleanLng);
+
+        if (!isNaN(lat) && !isNaN(lng)) {
+          const noUrut = row.no || (index + 1);
+          validPoints.push([lat, lng]);
+
+          // Icon pin merah dengan nomor urut
+          const customIcon = L.divIcon({
+            className: 'custom-pin-wrapper',
+            html: `<div class="marker-number-pin">${noUrut}</div>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12],
+            popupAnchor: [0, -12]
+          });
+
+          const marker = L.marker([lat, lng], {
+            icon: customIcon,
+            zIndexOffset: 1000 // Selalu tampil di atas layer peta & polygon wilayah
+          });
+
+          marker.bindPopup(`
+            <div style="font-size: 12px; line-height: 1.45; min-width: 175px;">
+              <strong style="color: #0284c7;">#${noUrut}. ${row.nama || 'Calon Pelanggan'}</strong><br>
+              <span style="color: #475569;">📍 ${row.alamat || 'Toraja Utara'}</span><br>
+              <span style="color: #059669; font-weight: 600;">📋 ${row.klasifikasi || row.peruntukan || 'Rumah Tangga'}</span><br>
+              ${row.whatsapp ? `<span style="color: #2563eb; font-size: 11px;">📞 ${row.whatsapp}</span><br>` : ''}
+              <span style="font-family: monospace; font-size: 10px; color: #64748b;">${lat.toFixed(6)}, ${lng.toFixed(6)}</span>
+            </div>
+          `);
+
+          markersLayer.addLayer(marker);
+        }
+      });
+
+      // Update Panel Legenda
+      const elTotal = document.getElementById('legendTotalData');
+      const elCakupan = document.getElementById('legendCakupan');
+      if (elTotal) elTotal.innerText = `${validPoints.length} Pelanggan`;
+      if (elCakupan) elCakupan.innerText = validPoints.length > 0 ? "Semua Titik Terpetakan" : "Menunggu Data";
+
+      // Otomatis paskan peta mengapit SEMUA titik pelanggan
+      zoomFitAllCustomerPoints();
+    }
+
+    /* ------------------------------------------------------------
+       Fungsi Paskan Peta Mengapit Semua Koordinat Pelanggan
+    ------------------------------------------------------------ */
+    function zoomFitAllCustomerPoints() {
+      if (!printMap || !markersLayer) return;
+
+      setTimeout(() => {
+        printMap.invalidateSize();
+
+        const markerBounds = markersLayer.getBounds();
+
+        if (markerBounds.isValid()) {
+          // Ada titik pelanggan: zoom & pan mengapit seluruh titik pelanggan terjauh
+          printMap.fitBounds(markerBounds, {
+            padding: [45, 45],
+            maxZoom: 18
+          });
+        } else {
+          // Fallback ke pusat Toraja Utara
+          printMap.setView([TORAJA_UTARA_LAT, TORAJA_UTARA_LNG], 14);
+        }
+
+        mapHasBeenFitted = true;
+        // Hitung skala berdasarkan tampilan baru yang mengapit titik pelanggan
+        setTimeout(() => {
+          calculateAndDisplayScale();
+        }, 300);
+      }, 150);
+    }
+
+    /* ------------------------------------------------------------
+       Perhitungan Skala Peta Otomatis (Rasio Angka & Batang Grafis)
+    ------------------------------------------------------------ */
+    function calculateAndDisplayScale() {
+      if (!printMap) return;
+
+      try {
+        const bounds = printMap.getBounds();
+        const center = printMap.getCenter();
+
+        // 1. Hitung jarak geografis riil di lapangan (meter) dari sisi barat ke timur peta
+        const west = L.latLng(center.lat, bounds.getWest());
+        const east = L.latLng(center.lat, bounds.getEast());
+        const distanceMeters = center.distanceTo(west) + center.distanceTo(east);
+
+        if (!distanceMeters || isNaN(distanceMeters) || distanceMeters <= 0) return;
+
+        // 2. Tentukan lebar cetak fisik peta pada kertas A4 Landscape
+        // Lebar lembar A4 landscape = 297 mm.
+        // Margin kiri 5mm + kanan 5mm = 10mm. Total cetak = 287mm.
+        // Lebar kolom legenda = 68 mm (255px).
+        // Lebar bersih kolom peta di atas kertas cetak = 287mm - 68mm = 219mm (0.219 meter).
+        const printMapWidthInMeters = 0.219;
+
+        // Rasio Skala = Jarak Lapangan / Jarak di Kertas
+        const rawScale = distanceMeters / printMapWidthInMeters;
+
+        // Pembulatan cartographic ke kelipatan terdekat agar rapi (misal: 1:12.500, 1:15.000, dst)
+        let roundFactor = 500;
+        if (rawScale > 50000) roundFactor = 5000;
+        else if (rawScale > 20000) roundFactor = 1000;
+        else if (rawScale > 5000) roundFactor = 500;
+        else roundFactor = 100;
+
+        const roundedScale = Math.round(rawScale / roundFactor) * roundFactor;
+
+        // Update Teks Skala Angka
+        const scaleText = "1 : " + roundedScale.toLocaleString('id-ID');
+        const elRatio = document.getElementById('scaleRatioDisplay');
+        if (elRatio) elRatio.innerText = scaleText;
+
+        // 3. Hitung Nilai Skala Batang Grafis (Graphic Scale Bar)
+        // Batang grafis di legenda lebarnya 190px.
+        // Hitung jarak meter yang terwakili oleh 4 segmen batang grafis tersebut
+        const containerPx = printMap.getSize().x || 800;
+        const metersPerPixel = distanceMeters / containerPx;
+        const totalBarMeters = metersPerPixel * 190;
+
+        // Tentukan angka batas bulat untuk batang skala (misal 500m, 1km, 2km, dsb)
+        let maxBarUnit = getNiceScaleDistance(totalBarMeters);
+        let quarter = maxBarUnit / 4;
+
+        document.getElementById('scaleLabel1').innerText = formatDistanceUnit(quarter);
+        document.getElementById('scaleLabel2').innerText = formatDistanceUnit(quarter * 2);
+        document.getElementById('scaleLabel3').innerText = formatDistanceUnit(quarter * 3);
+        document.getElementById('scaleLabel4').innerText = formatDistanceUnit(maxBarUnit);
+
+      } catch (err) {
+        console.warn("Gagal menghitung skala otomatis:", err);
+      }
+    }
+
+    /* Helper pembulatan jarak ramah skala */
+    function getNiceScaleDistance(meters) {
+      if (meters <= 0) return 1000;
+      const exponent = Math.floor(Math.log10(meters));
+      const fraction = meters / Math.pow(10, exponent);
+      let niceFraction;
+      if (fraction < 1.5) niceFraction = 1;
+      else if (fraction < 3) niceFraction = 2;
+      else if (fraction < 7) niceFraction = 5;
+      else niceFraction = 10;
+      return niceFraction * Math.pow(10, exponent);
+    }
+
+    /* Helper format satuan jarak (meter / km) */
+    function formatDistanceUnit(meters) {
+      if (meters >= 1000) {
+        const km = meters / 1000;
+        return (Number.isInteger(km) ? km : km.toFixed(1)) + ' km';
+      }
+      return Math.round(meters) + ' m';
+    }
+
+    /* ------------------------------------------------------------
+       Pengambilan Data Realtime dari Google Apps Script
+    ------------------------------------------------------------ */
+    function loadRealtimeData() {
+      const syncStatus = document.getElementById('syncStatus');
+      syncStatus.innerText = "Menghubungi Google Spreadsheet...";
+
+      const scriptUrl = CONFIG.SCRIPT_URL;
+
+      if (!scriptUrl || scriptUrl.includes("ISI_DENGAN_GOOGLE")) {
+        syncStatus.innerText = "URL Apps Script belum disetel di js/config.js";
+        return;
+      }
+
+      fetch(scriptUrl)
+        .then(res => {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          return res.json();
+        })
+        .then(res => {
+          const rows = Array.isArray(res) ? res :
+                       (res.status === 'success' && Array.isArray(res.data)) ? res.data :
+                       (Array.isArray(res.data) ? res.data : []);
+
+          if (rows.length > 0) {
+            allData = rows;
+            updateMapMarkers(allData);
+            syncStatus.innerText = `Tersambung (${allData.length} data pelanggan)`;
+          } else {
+            allData = [];
+            updateMapMarkers([]);
+            syncStatus.innerText = "Tersambung (0 data pelanggan)";
+          }
+        })
+        .catch(err => {
+          console.warn("Koneksi langsung GET gagal:", err);
+          syncStatus.innerText = "Gagal terhubung ke Google Spreadsheet";
+        });
+    }
+
+    /* ------------------------------------------------------------
+       Sinkronisasi ukuran peta saat dialog cetak printer dibuka
+    ------------------------------------------------------------ */
+    window.addEventListener('beforeprint', () => {
+      if (printMap) {
+        printMap.invalidateSize();
+        calculateAndDisplayScale();
+      }
+    });
+
+    /* ------------------------------------------------------------
+       Inisialisasi saat halaman dibuka
+    ------------------------------------------------------------ */
+    document.addEventListener('DOMContentLoaded', () => {
+      initPrintMap();
+      setTimeout(() => {
+        loadRealtimeData();
+      }, 350);
+    });
+  </script>
+</body>
+</html>
+
