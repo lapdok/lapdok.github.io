@@ -672,6 +672,7 @@
         <div class="map-mode-bar no-print">
           <button type="button" class="mode-btn active" id="btnModeSat" onclick="switchMapLayer('satellite')">🛰️ Satelit</button>
           <button type="button" class="mode-btn" id="btnModeRoad" onclick="switchMapLayer('roadmap')">🏢 Jalan &amp; Bangunan</button>
+          <button type="button" class="mode-btn" id="btnModeTopo" onclick="switchMapLayer('terrain')">⛰️ Kontur (Topografi)</button>
           <button type="button" class="mode-btn" id="btnModeCad" onclick="switchMapLayer('autocad')">📐 AutoCAD (Garis)</button>
         </div>
 
@@ -814,21 +815,31 @@
     // Layer Map Options (Google Maps Engine)
     let layerSatellite = null;
     let layerRoadmap = null;
+    let layerTerrain = null;
 
     /* ------------------------------------------------------------
        Inisialisasi Peta Leaflet
     ------------------------------------------------------------ */
     function initPrintMap() {
+      // 1. Satelit Google (Hybrid)
       layerSatellite = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
         maxZoom: 20,
         subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
         attribution: '&copy; Google Maps'
       });
 
+      // 2. Jalan & Bangunan Google (Roadmap)
       layerRoadmap = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
         maxZoom: 20,
         subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
         attribution: '&copy; Google Maps'
+      });
+
+      // 3. Peta Kontur & Topografi Medan Relief (Terrain Google)
+      layerTerrain = L.tileLayer('https://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+        attribution: '&copy; Google Maps (Terrain / Kontur)'
       });
 
       printMap = L.map('printMap', {
@@ -860,7 +871,7 @@
     }
 
     /* ------------------------------------------------------------
-       Ganti Mode Tampilan Peta
+       Ganti Mode Tampilan Peta (Satelit, Jalan, Kontur, AutoCAD)
     ------------------------------------------------------------ */
     function switchMapLayer(mode) {
       if (!printMap) return;
@@ -869,10 +880,12 @@
 
       document.getElementById('btnModeSat').classList.toggle('active', mode === 'satellite');
       document.getElementById('btnModeRoad').classList.toggle('active', mode === 'roadmap');
+      document.getElementById('btnModeTopo').classList.toggle('active', mode === 'terrain');
       document.getElementById('btnModeCad').classList.toggle('active', mode === 'autocad');
 
       printMap.removeLayer(layerSatellite);
       printMap.removeLayer(layerRoadmap);
+      printMap.removeLayer(layerTerrain);
 
       if (mode === 'satellite') {
         mapContainer.classList.remove('cad-mode-active');
@@ -880,6 +893,9 @@
       } else if (mode === 'roadmap') {
         mapContainer.classList.remove('cad-mode-active');
         layerRoadmap.addTo(printMap);
+      } else if (mode === 'terrain') {
+        mapContainer.classList.remove('cad-mode-active');
+        layerTerrain.addTo(printMap);
       } else if (mode === 'autocad') {
         mapContainer.classList.add('cad-mode-active');
         layerRoadmap.addTo(printMap);

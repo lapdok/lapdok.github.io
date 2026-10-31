@@ -16,6 +16,12 @@ document.addEventListener('DOMContentLoaded', function () {
     subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
   });
 
+  // 3. Layer Google Kontur & Topografi Medan (Terrain)
+  const googleTerrain = L.tileLayer('https://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+  });
+
   // Inisialisasi Peta
   const map = L.map('map', {
     center: [initialLat, initialLng],
@@ -27,10 +33,11 @@ document.addEventListener('DOMContentLoaded', function () {
   // Tombol zoom di kiri atas
   L.control.zoom({ position: 'topleft' }).addTo(map);
 
-  // Pengalih mode peta di kanan atas (Bisa ganti antara Satelit Google & Peta Jalan Google)
+  // Pengalih mode peta di kanan atas (Satelit, Jalan, & Kontur Topografi)
   const baseMaps = {
     "Google Satelit": googleHybrid,
-    "Google Jalan": googleRoadmap
+    "Google Jalan": googleRoadmap,
+    "Google Kontur / Medan": googleTerrain
   };
   L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
