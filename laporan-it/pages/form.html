@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Input Laporan - DokKiner</title>
+    
+    <link rel="manifest" href="../manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="../assets/icons/icon-192.png">
+    <meta name="theme-color" content="#005b96">
+
+    <!-- Leaflet JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Script & Style -->
+    <link rel="stylesheet" href="../css/form.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    <script src="../js/jarvis.js"></script>
+    <script src="../js/nav.js"></script>
+    <script src="../js/pwa.js"></script>
+    <script src="../js/image-compressor.js"></script>
+    <script defer src="../js/form-handler.js?v=1.2"></script>
+
+    <!-- External styles linked above -->
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="../index.html" class="nav-brand">📋 LapDok Kinerja</a>
+        <button class="nav-toggle" id="nav-toggle-btn" aria-label="Toggle navigasi" onclick="toggleNavMenu()">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+        </button>
+        <div class="nav-menu" id="nav-menu-links">
+            <a href="../index.html" class="nav-link">🏠 Beranda</a>
+            <a href="form.html" class="nav-link active">📝 Form Input</a>
+            <a href="tampildata.html" class="nav-link">📂 Riwayat Laporan</a>
+            <button id="pwa-nav-install-btn" class="nav-link" onclick="installLapDokPWA()" style="display:none; background:linear-gradient(135deg, #00d2ff, #005b96); border:none; border-radius:6px; font-weight:bold; cursor:pointer;">📲 Pasang App</button>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div id="edit-banner">
+        ⚠️ MODE EDIT: Perubahan akan menimpa data lama. <br> 
+        <button onclick="cancelEdit()" style="margin-top:5px; padding:5px; cursor:pointer;">Batal Edit</button>
+    </div>
+
+    <!-- KPI Selector Card -->
+    <div class="kpi-selector-card">
+        <div class="kpi-card-header">
+            <span class="kpi-icon">🎯</span>
+            <div style="flex-grow:1;">
+                <h3 style="margin:0; font-size:14px; color:#2c3e50;">KATEGORI INDIKATOR KINERJA (KPI)</h3>
+                <small style="color:#7f8c8d;">Sesuai daftar penugasan aktif di <strong>presensi.amertatoraya.com</strong></small>
+            </div>
+        </div>
+
+        <div style="margin-top:12px;">
+            <label style="font-weight:bold; font-size:11px; color:#34495e;">PILIH INDIKATOR KERJA:</label>
+            <select id="kpi-category-select" class="kpi-select" onchange="onKpiCategoryChange()">
+                <option value="it_harian">🔁 [Harian] Perawatan IT & Edukasi Aplikasi (Target: 100%)</option>
+                <option value="it_kendala_mingguan">🔁 [Mingguan] Penanganan Kendala Jaringan & Administrasi Teknik (Target: 100%)</option>
+                <option value="cctv_mingguan">🔁 [Mingguan] Pemantauan & Pemeliharaan CCTV (Target: 3 Jumlah)</option>
+                <option value="insidentil_perusahaan">🔁 [Insidentil] Tugas Lain-lain Perusahaan (Target: 100%)</option>
+                <option value="umum">📁 [Umum] Dokumentasi Fisik / Lapangan (Mode Klasik)</option>
+            </select>
+        </div>
+
+        <div class="kpi-meta-grid" id="kpi-meta-display">
+            <!-- Otomatis diisi oleh JavaScript -->
+        </div>
+
+        <div class="kpi-help-box" id="kpi-help-display">
+            <!-- Petunjuk diisi oleh JavaScript -->
+        </div>
+    </div>
+
+    <!-- Weekly Config Card (Muncul Khusus Indikator Mingguan) -->
+    <div id="weekly-config-card" class="kpi-selector-card" style="display:none; border-left-color: #27ae60; background: #fafefe;">
+        <div class="kpi-card-header">
+            <span class="kpi-icon">📅</span>
+            <div style="flex-grow:1;">
+                <h3 style="margin:0; font-size:13px; color:#1e8449;">PENGATURAN LAPORAN MINGGUAN (REKAPITULASI)</h3>
+                <small style="color:#7d6608;">Format rekapitulasi tabel A4 sesuai contoh resmi Perumda Amerta Toraya</small>
+            </div>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:12px;">
+            <div>
+                <label style="font-weight:bold; font-size:10px; color:#34495e;">PILIHAN MINGGU:</label>
+                <input type="text" id="weekly-minggu-ke" placeholder="Contoh: Minggu ke-2 (Oktober 2026)" oninput="saveDraft()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:11px; font-weight:bold; color:#2c3e50;">
+            </div>
+            <div>
+                <label style="font-weight:bold; font-size:10px; color:#34495e;">RENTANG PERIODE (SENIN S/D MINGGU):</label>
+                <input type="text" id="weekly-rentang" placeholder="Contoh: Senin, 05 Oktober 2026 s/d Minggu, 11 Oktober 2026" oninput="saveDraft()" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:11px; font-weight:bold; color:#2c3e50;">
+            </div>
+        </div>
+        <div style="margin-top:10px;">
+            <label style="font-weight:bold; font-size:10px; color:#d35400;">CATATAN EVALUASI & DAMPAK HASIL PEKERJAAN:</label>
+            <textarea id="weekly-catatan-evaluasi" oninput="saveDraft()" rows="2" placeholder="Contoh: Seluruh laporan bulanan unit telah terekapitulasi sebelum batas waktu tanggal 7 awal bulan baru. Kendala web server error berhasil dipulihkan sehingga pelayanan kembali normal." style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:11px; resize:vertical; box-sizing:border-box; margin-top:4px;"></textarea>
+        </div>
+    </div>
+
+    <div id="job-container"></div>
+    <div class="actions">
+        <button class="btn-add" onclick="addNewJobItem()">+ Tambah Item Pekerjaan</button>
+        <button class="btn-save" onclick="saveToHistory()">💾 Simpan ke Riwayat</button>
+    </div>
+</div>
+
+<!-- (Modal HTML tetap sama seperti sebelumnya...) -->
+<div id="map-modal">
+    <div class="modal-content">
+        <div style="position: relative;">
+            <div id="map-container"></div>
+            <div class="map-controls">
+                <button class="btn-locate" onclick="getCurrentLocation()">🎯</button>
+            </div>
+        </div>
+        <div style="padding:15px; display:flex; justify-content: space-between; align-items: center;">
+            <span id="map-status" style="font-size:10px; color:#e67e22;"></span>
+            <div>
+                <button onclick="closeMap()" style="padding:10px;">Batal</button>
+                <button onclick="confirmLocation()" style="padding:10px; background:#27ae60; color:white; border:none; border-radius:4px;">Pilih Lokasi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="cam-modal">
+    <video id="cam-video" autoplay playsinline muted></video>
+        <div id="cam-overlay" style="display: none;">
+            <div class="tm-flex">
+                <div class="tm-time" id="val-time"></div>
+                <div class="tm-line"></div>
+                <div class="tm-date-col">
+                    <div class="tm-date" id="val-date"></div>
+                    <div class="tm-day" id="val-day"></div>
+                </div>
+            </div>
+            <div class="tm-info" id="val-gps"></div>
+            <div class="tm-info" id="val-addr"></div>
+        </div>
+    <div class="cam-controls">
+        <button onclick="closeCamera()" style="color:white; background:none; border:none; font-size:13px; font-weight:bold;">✖ Batal</button>
+        <button class="btn-shutter" onclick="capturePhoto()"></button>
+        <button onclick="flipCamera()" style="color:white; background:rgba(255,255,255,0.15); border:2px solid rgba(255,255,255,0.5); border-radius:50%; width:44px; height:44px; font-size:22px; cursor:pointer;" title="Ganti Kamera">🔄</button>
+    </div>
+</div>
+
+<!-- External JavaScript linked above in <head> -->
+
+<button id="btn-mute-toggle" onclick="Jarvis.toggleMute()">🔇 Matikan Suara</button>
+
+</body>
+</html>

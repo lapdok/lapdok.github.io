@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LapDok - Dashboard Penugasan Kinerja</title>
+    
+    <!-- Google AdSense Auto Ads -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2642522351768171" crossorigin="anonymous"></script>
+
+    <!-- PWA Setup -->
+    <link rel="manifest" href="assets/manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+
+    <!-- localForage (IndexedDB Wrapper) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+
+    <!-- Script Jarvis & Nav & PWA -->
+    <script src="js/jarvis.js"></script>
+    <script src="js/nav.js"></script>
+    <script src="js/pwa.js"></script>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #f4f7f6; 
+            color: #333; 
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* NAVBAR & RESPONSIVE HAMBURGER MENU */
+        .navbar {
+            background: #2c3e50;
+            position: sticky;
+            top: 0;
+            z-index: 10000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .nav-container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            height: 52px;
+        }
+        .nav-brand {
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+            text-decoration: none;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13.5px;
+            opacity: 0.85;
+            padding: 7px 12px;
+            border-radius: 6px;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .nav-link:hover, .nav-link.active {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+        .nav-toggle {
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 36px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 7px 6px;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+        .nav-toggle .bar {
+            width: 100%;
+            height: 2.5px;
+            background-color: white;
+            border-radius: 2px;
+            transition: 0.25s ease-in-out;
+        }
+        .nav-toggle.open .bar:nth-child(1) {
+            transform: translateY(6px) rotate(45deg);
+        }
+        .nav-toggle.open .bar:nth-child(2) {
+            opacity: 0;
+        }
+        .nav-toggle.open .bar:nth-child(3) {
+            transform: translateY(-6px) rotate(-45deg);
+        }
+
+        @media (max-width: 680px) {
+            .nav-toggle {
+                display: flex;
+            }
+            .nav-menu {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 52px;
+                left: 0;
+                right: 0;
+                background: #243342;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+                padding: 10px 14px 14px 14px;
+                gap: 6px;
+            }
+            .nav-menu.active {
+                display: flex;
+                animation: navSlideDown 0.2s ease-out;
+            }
+            .nav-menu .nav-link {
+                width: 100%;
+                padding: 12px 14px;
+                font-size: 14px;
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 8px;
+                box-sizing: border-box;
+            }
+            .nav-menu .nav-link.active {
+                background: #3498db;
+            }
+        }
+        @keyframes navSlideDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 20px 15px;
+            width: 100%;
+            flex-grow: 1;
+        }
+
+        /* Profile & Period Header Box */
+        .profile-card {
+            background: linear-gradient(135deg, #1b3a57 0%, #2c3e50 100%);
+            color: white;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+            margin-bottom: 20px;
+        }
+        .profile-top {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .profile-avatar {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: #3498db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            flex-shrink: 0;
+        }
+        .profile-info h2 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            margin-bottom: 3px;
+        }
+        .profile-info p {
+            font-size: 12px;
+            opacity: 0.85;
+            line-height: 1.4;
+        }
+        .profile-period-badge {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .period-highlight {
+            font-weight: bold;
+            color: #f1c40f;
+        }
+
+        /* Section Title & Tabs */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 20px 0 12px 0;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .section-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tab-btn-group {
+            display: flex;
+            gap: 6px;
+        }
+        .tab-btn {
+            background: #e2e8f0;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #475569;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .tab-btn.active {
+            background: #3498db;
+            color: white;
+        }
+
+        /* Task Grid & Cards */
+        .task-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 14px;
+        }
+        @media (min-width: 640px) {
+            .task-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .task-card {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            border: 1px solid #e1e8ed;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.09);
+        }
+
+        .task-top {
+            margin-bottom: 12px;
+        }
+        .task-badges {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        .badge {
+            font-size: 10px;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+            color: white;
+            text-transform: uppercase;
+        }
+        .badge-harian { background: #27ae60; }
+        .badge-mingguan { background: #2980b9; }
+        .badge-cctv { background: #8e44ad; }
+        .badge-insidentil { background: #d35400; }
+        .badge-beban { background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; }
+
+        .task-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #2c3e50;
+            line-height: 1.4;
+            margin-bottom: 6px;
+        }
+        .task-meta {
+            font-size: 11px;
+            color: #64748b;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+        .task-tupoksi-box {
+            background: #f8fafc;
+            border-left: 3px solid #3498db;
+            padding: 8px 10px;
+            border-radius: 0 6px 6px 0;
+            font-size: 10.5px;
+            color: #475569;
+            line-height: 1.4;
+            margin-bottom: 14px;
+        }
+
+        .task-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: auto;
+        }
+        .btn-lapor {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+        .btn-lapor:hover {
+            opacity: 0.92;
+            background: #2980b9;
+        }
+        .btn-lapor-cctv { background: #8e44ad; }
+        .btn-lapor-cctv:hover { background: #732d91; }
+        .btn-lapor-harian { background: #27ae60; }
+        .btn-lapor-harian:hover { background: #219653; }
+        
+        .btn-mark-upload {
+            background: none;
+            border: 1px solid #cbd5e1;
+            color: #64748b;
+            padding: 7px 10px;
+            border-radius: 6px;
+            font-size: 10.5px;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.2s;
+        }
+        .btn-mark-upload:hover {
+            background: #eef2f7;
+            color: #2c3e50;
+            border-color: #94a3b8;
+        }
+
+        /* Completed Task Card (Locked state) */
+        .completed-card {
+            background: #fdfefe;
+            border: 1.5px dashed #27ae60;
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .completed-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .badge-locked {
+            background: #e8f5e9;
+            color: #27ae60;
+            border: 1px solid #a5d6a7;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .countdown-pill {
+            background: #fff8e1;
+            color: #b78103;
+            border: 1px solid #ffe082;
+            font-size: 10.5px;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 6px;
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-unmark {
+            background: none;
+            border: 1px solid #e74c3c;
+            color: #e74c3c;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 10.5px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 6px;
+            text-align: center;
+        }
+        .btn-unmark:hover {
+            background: #fdf2f2;
+        }
+
+        /* Jarvis Audio Float / Card */
+        .jarvis-bar {
+            background: white;
+            border-radius: 10px;
+            padding: 12px 18px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #e1e8ed;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .jarvis-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #2c3e50;
+        }
+        .btn-jarvis-toggle {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 7px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .seo-section {
+            background: white;
+            padding: 18px;
+            border-radius: 10px;
+            border: 1px solid #e1e8ed;
+            margin-bottom: 20px;
+            font-size: 12px;
+            color: #555;
+            line-height: 1.6;
+        }
+        .seo-section h3 { font-size: 14px; color: #2c3e50; margin-bottom: 6px; }
+
+        /* RESPONSIVE MOBILE STYLES */
+        @media (max-width: 580px) {
+            .container { padding: 12px 10px; }
+            .profile-card { padding: 14px 12px; border-radius: 10px; }
+            .profile-top { gap: 10px; margin-bottom: 10px; }
+            .profile-avatar { width: 44px; height: 44px; font-size: 20px; }
+            .profile-info h2 { font-size: 15px; }
+            .profile-info p { font-size: 11px; }
+            .profile-period-badge { padding: 8px 10px; font-size: 11px; flex-direction: column; align-items: flex-start; gap: 4px; }
+            .section-header { margin: 15px 0 10px 0; }
+            .tab-btn-group { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+            .tab-btn { padding: 9px 6px; font-size: 11px; text-align: center; border-radius: 6px; }
+            .task-card { padding: 14px 12px; border-radius: 10px; }
+            .task-title { font-size: 13.5px; }
+            .btn-lapor { min-height: 42px; font-size: 12px; }
+            .btn-mark-upload { min-height: 38px; font-size: 11px; }
+            .jarvis-bar { flex-direction: column; align-items: stretch; text-align: center; padding: 12px; gap: 8px; }
+            .jarvis-info { justify-content: center; }
+            .btn-jarvis-toggle { width: 100%; padding: 10px; font-size: 12px; }
+        }
+
+        .footer-nav { text-align: center; font-size: 12px; color: #7f8c8d; margin-top: 10px; padding-bottom: 20px; }
+        .footer-nav a { color: #3498db; text-decoration: none; margin: 0 8px; }
+
+        @keyframes pwaSlideUp {
+            from { opacity: 0; transform: translate(-50%, 25px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-brand">📋 LapDok Kinerja</a>
+            <button class="nav-toggle" id="nav-toggle-btn" aria-label="Toggle navigasi" onclick="toggleNavMenu()">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
+            <div class="nav-menu" id="nav-menu-links">
+                <a href="index.html" class="nav-link active">🏠 Beranda</a>
+                <a href="pages/form.html" class="nav-link">📝 Form Input</a>
+                <a href="pages/tampildata.html" class="nav-link">📂 Riwayat Laporan</a>
+                <button id="pwa-nav-install-btn" class="nav-link" onclick="installLapDokPWA()" style="display:none; background:linear-gradient(135deg, #00d2ff, #005b96); border:none; border-radius:6px; font-weight:bold; cursor:pointer;">📲 Pasang App</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <!-- Officer Profile & Active Period Banner -->
+        <div class="profile-card">
+            <div class="profile-top">
+                <div class="profile-avatar">👤</div>
+                <div class="profile-info">
+                    <h2>DAVID PALIWAN, S.Kom</h2>
+                    <p>Staf Teknologi Informasi / Pengelola KPI</p>
+                    <p style="opacity:0.75; font-size:11px;">Perumda Air Minum Amerta Toraya • Sub Bidang TI</p>
+                </div>
+            </div>
+            <div class="profile-period-badge">
+                <div>📅 <strong>PERIODE KERJA AKTIF:</strong> <span id="lbl-rentang" class="period-highlight">Memuat periode...</span></div>
+                <div id="lbl-minggu-ke" style="font-size:11px; opacity:0.9;">Minggu berjalan</div>
+            </div>
+        </div>
+
+        <!-- Section Header with Tabs -->
+        <div class="section-header">
+            <div class="section-title">
+                <span>🎯</span>
+                <span>DAFTAR PENUGASAN KPI PRESENSI</span>
+            </div>
+            <div class="tab-btn-group">
+                <button class="tab-btn active" id="tab-btn-active" onclick="switchTab('active')">📋 Tugas Aktif (<span id="cnt-active">0</span>)</button>
+                <button class="tab-btn" id="tab-btn-done" onclick="switchTab('done')">✅ Tuntas Minggu Ini (<span id="cnt-done">0</span>)</button>
+            </div>
+        </div>
+
+        <!-- ACTIVE TASKS CONTAINER -->
+        <div id="active-tasks-view">
+            <div class="task-grid" id="active-tasks-grid">
+                <!-- Rendered dynamically via JavaScript -->
+            </div>
+            <div id="no-active-tasks" style="display:none; text-align:center; padding:35px 20px; background:white; border-radius:12px; border:1px solid #e1e8ed; color:#27ae60;">
+                <div style="font-size:36px; margin-bottom:8px;">🎉</div>
+                <h3 style="font-size:16px; margin-bottom:4px; color:#2c3e50;">Semua Laporan Mingguan Telah Selesai!</h3>
+                <p style="font-size:12px; color:#64748b;">Seluruh kewajiban laporan mingguan untuk periode ini telah tuntas di-upload. Tugas minggu berikutnya akan muncul otomatis pada hari Senin depan.</p>
+                <button onclick="switchTab('done')" style="margin-top:12px; background:#27ae60; color:white; border:none; padding:8px 16px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;">Lihat Tugas yang Telah Tuntas</button>
+            </div>
+        </div>
+
+        <!-- COMPLETED TASKS CONTAINER (Hidden by default, or active if tab switched) -->
+        <div id="completed-tasks-view" style="display:none;">
+            <div style="background:#e8f5e9; border:1px solid #c8e6c9; border-radius:10px; padding:12px 16px; margin-bottom:14px; font-size:12px; color:#2e7d32;">
+                ℹ️ <strong>Laporan Mingguan yang Sudah Selesai Di-upload</strong> akan terkunci dan disembunyikan dari daftar aktif sampai genap seminggu kemudian (Senin minggu berikutnya).
+            </div>
+            <div class="task-grid" id="completed-tasks-grid">
+                <!-- Rendered dynamically via JavaScript -->
+            </div>
+            <div id="no-completed-tasks" style="display:none; text-align:center; padding:30px; background:white; border-radius:12px; border:1px solid #e1e8ed; color:#94a3b8; font-size:12px;">
+                Belum ada laporan mingguan yang ditandai tuntas untuk minggu ini.
+            </div>
+        </div>
+
+        <!-- Jarvis Voice Assistant Helper Bar -->
+        <div class="jarvis-bar">
+            <div class="jarvis-info">
+                <span style="font-size:24px;">🎙️</span>
+                <div>
+                    <strong>Pemandu Suara Jarvis</strong>
+                    <div style="font-size:11px; color:#64748b;">Panduan audio cerdas pengisian form dan navigasi laporan</div>
+                </div>
+            </div>
+            <button class="btn-jarvis-toggle" id="btn-jarvis-action" onclick="toggleJarvisHome()">🔊 Aktifkan Jarvis</button>
+        </div>
+
+        <!-- TeraBox Cloud Storage Banner (Official) -->
+        <div style="margin-bottom: 20px;">
+            <div style="background: white; border: 1px solid #e1e8ed; border-radius: 12px; padding: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); font-family: 'Segoe UI', sans-serif;">
+                <a href="https://dm.terabox.com/referral/81366889560292" target="_blank" style="text-decoration: none; color: inherit; display: flex; align-items: center; width: 100%;">
+                    <img src="https://s5.teraboxcdn.com/common-static/favicon.ico" alt="TeraBox" style="width: 55px; height: 55px; border-radius: 10px; object-fit: cover; margin-right: 12px; border: 1px solid #eef2f7; padding: 4px; background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);">
+                    <div style="text-align: left; flex: 1;">
+                        <span style="background: #FF6B35; color: white; font-size: 9px; padding: 2px 7px; border-radius: 4px; font-weight: bold; text-transform: uppercase;">🔥 1TB Gratis</span>
+                        <h4 style="font-size: 13.5px; margin: 4px 0 2px 0; color: #1a1a2e; font-weight: 700;">
+                            Penyimpanan Cloud 1TB Gratis — Tanpa Bayar
+                        </h4>
+                        <p style="font-size: 11px; color: #555; margin: 0; line-height: 1.3;">
+                            Simpan ribuan arsip foto & video tanpa khawatir memori HP penuh.
+                        </p>
+                    </div>
+                    <span style="color: #FF6B35; font-weight: 800; font-size: 11px; margin-left: 8px;">Klaim ➔</span>
+                </a>
+            </div>
+        </div>
+
+
+        <!-- SEO Information -->
+        <div class="seo-section">
+            <h3>Solusi Dokumentasi Kinerja Modern Perumda Amerta Toraya</h3>
+            <p>LapDok dirancang untuk memudahkan para pegawai dan tim teknisi dalam merekam seluruh dokumentasi pekerjaan harian dan mingguan dengan validasi foto, koordinat GPS, serta pratinjau peta satelit. Seluruh format laporan terintegrasi otomatis dengan standar pelaporan elektronik portal presensi resmi.</p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer-nav">
+            <a href="pages/about.html">Tentang Kami</a> | 
+            <a href="pages/guide.html">Panduan</a> | 
+            <a href="pages/privacy.html">Kebijakan Privasi</a>
+            <p style="margin-top: 10px; font-size: 10px; color: #bdc3c7;">© 2026 LapDok - Perumda Air Minum Amerta Toraya</p>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 1. KALENDER & SIKLUS MINGGU ---
+        function getWeekRange(dateObj = new Date()) {
+            const d = new Date(dateObj);
+            const day = d.getDay();
+            const diffToMonday = (day === 0 ? -6 : 1) - day;
+            const monday = new Date(d);
+            monday.setDate(d.getDate() + diffToMonday);
+            monday.setHours(0, 0, 0, 0);
+
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            sunday.setHours(23, 59, 59, 999);
+
+            const nextMonday = new Date(monday);
+            nextMonday.setDate(monday.getDate() + 7);
+
+            const monDate = monday.getDate();
+            const weekNum = Math.ceil(monDate / 7);
+
+            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            const monStr = `${monday.getDate()} ${monthNames[monday.getMonth()]} ${monday.getFullYear()}`;
+            const sunStr = `${sunday.getDate()} ${monthNames[sunday.getMonth()]} ${sunday.getFullYear()}`;
+            const rentang = `Senin, ${monStr} s/d Minggu, ${sunStr}`;
+            const mingguKe = `Minggu ke-${weekNum} (${monthNames[monday.getMonth()]} ${monday.getFullYear()})`;
+            const weekKey = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+            
+            // Hitung sisa hari menuju hari Senin depan
+            const msDiff = nextMonday.getTime() - d.getTime();
+            const daysRemaining = Math.max(1, Math.ceil(msDiff / (1000 * 60 * 60 * 24)));
+            const nextMondayFormatted = `${nextMonday.getDate()} ${monthNames[nextMonday.getMonth()]} ${nextMonday.getFullYear()}`;
+
+            return { monday, sunday, nextMonday, rentang, mingguKe, weekKey, daysRemaining, nextMondayFormatted };
+        }
+
+        // --- 2. DEFINISI MASTER INDIKATOR KPI PRESENSI ---
+        const MASTER_KPI_TASKS = [
+            {
+                key: 'it_harian',
+                type: 'harian',
+                badgeClass: 'badge-harian',
+                badgeText: 'Harian',
+                beban: 'Sedang',
+                target: '100 Persentase',
+                realisasi: 100,
+                title: 'Perawatan & Pemeliharaan Jaringan Internet, Perangkat Lunak/Keras, Edukasi Aplikasi',
+                desc: 'Troubleshooting koneksi internet, pemeliharaan PC/printer kantor, dan pendampingan aplikasi presensi & PDAMOne.',
+                btnText: '📝 Isi Laporan Hari Ini',
+                btnClass: 'btn-lapor-harian'
+            },
+            {
+                key: 'it_kendala_mingguan',
+                type: 'mingguan',
+                badgeClass: 'badge-mingguan',
+                badgeText: 'Mingguan',
+                beban: 'Ringan',
+                target: '100 Persentase',
+                realisasi: 100,
+                title: 'Penanganan Kendala Komputasi/Jaringan dan Pelaporan Administrasi di Bidang Teknik & Unit',
+                desc: 'Penyusunan rekapitulasi kinerja mingguan serta penanganan gangguan sistem & transmisi data lingkungan Bidang Teknik.',
+                btnText: '📝 Susun Laporan Mingguan',
+                btnClass: 'btn-lapor'
+            },
+            {
+                key: 'cctv_mingguan',
+                type: 'mingguan',
+                badgeClass: 'badge-cctv',
+                badgeText: 'Mingguan (CCTV)',
+                beban: 'Ringan',
+                target: '3 Jumlah (Titik)',
+                realisasi: 3,
+                title: 'Pemantauan & Pemeliharaan & Pengembangan CCTV Perusahaan',
+                desc: 'Pemantauan status live view seluruh kamera CCTV, pemeriksaan koneksi NVR/kabel PoE, dan pengarsipan rekaman video.',
+                btnText: '📝 Susun Laporan CCTV (Target 3)',
+                btnClass: 'btn-lapor-cctv'
+            },
+            {
+                key: 'insidentil_perusahaan',
+                type: 'insidentil',
+                badgeClass: 'badge-insidentil',
+                badgeText: 'Insidentil',
+                beban: 'Sedang',
+                target: '100 Persentase',
+                realisasi: 100,
+                title: 'Tugas Lain-lain Perusahaan',
+                desc: 'Pelaksanaan tugas khusus di luar tupoksi rutin atas instruksi pimpinan / disposisi Direktur untuk operasional perusahaan.',
+                btnText: '📝 Catat Tugas Insidentil',
+                btnClass: 'btn-lapor'
+            }
+        ];
+
+        let currentTab = 'active';
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('tab-btn-active').classList.toggle('active', tab === 'active');
+            document.getElementById('tab-btn-done').classList.toggle('active', tab === 'done');
+            document.getElementById('active-tasks-view').style.display = tab === 'active' ? 'block' : 'none';
+            document.getElementById('completed-tasks-view').style.display = tab === 'done' ? 'block' : 'none';
+        }
+
+        // --- 3. LOGIKA DETEKSI TUNTAS / BELUM TUNTAS ---
+        async function renderDashboard() {
+            const wr = getWeekRange(new Date());
+
+            document.getElementById('lbl-rentang').innerText = wr.rentang;
+            document.getElementById('lbl-minggu-ke').innerText = wr.mingguKe;
+
+            let uploadedKpi = await localforage.getItem('lapdok_uploaded_kpi') || {};
+            let historyRaw = await localforage.getItem('lapdok_history') || [];
+            let history = Array.isArray(historyRaw) ? historyRaw : [];
+
+            const activeGrid = document.getElementById('active-tasks-grid');
+            const completedGrid = document.getElementById('completed-tasks-grid');
+            
+            let activeHtml = '';
+            let completedHtml = '';
+            let activeCount = 0;
+            let doneCount = 0;
+
+            MASTER_KPI_TASKS.forEach(task => {
+                let isDone = false;
+                let doneMeta = null;
+                let currentItemCount = 0;
+                let existingReport = null;
+
+                if (task.type === 'mingguan') {
+                    // Periksa apakah sudah ada laporan mingguan di riwayat untuk rentang minggu ini
+                    existingReport = history.find(h => {
+                        if (h.kpiCategory !== task.key) return false;
+                        if (h.weeklyMeta && h.weeklyMeta.rentang && h.weeklyMeta.rentang.includes(wr.weekKey)) return true;
+                        if (h.date) {
+                            const d = new Date(h.date);
+                            return d >= wr.monday && d <= wr.sunday;
+                        }
+                        return false;
+                    });
+
+                    currentItemCount = Array.isArray(existingReport?.data) ? existingReport.data.length : 0;
+
+                    // Periksa penanda eksplisit
+                    const uploadKey = `${task.key}_${wr.weekKey}`;
+                    const marker = uploadedKpi[uploadKey];
+
+                    // SYARAT TUNTAS KHUSUS TARGET 3 (CCTV):
+                    // Hanya dikatakan TUNTAS jika daftar kegiatan & lampiran bukti sudah 3 atau lebih dari 3 (>= 3)!
+                    if (task.key === 'cctv_mingguan' || task.target.includes('3')) {
+                        if (currentItemCount >= 3) {
+                            isDone = true;
+                            doneMeta = existingReport;
+                        } else if (marker && marker.isUploaded && (marker.itemCount >= 3)) {
+                            isDone = true;
+                            doneMeta = marker;
+                        } else {
+                            // Kurang dari 3 kegiatan: BELUM TUNTAS
+                            isDone = false;
+                        }
+                    } else {
+                        // Indikator mingguan umum (target 100%)
+                        if (marker && marker.isUploaded) {
+                            isDone = true;
+                            doneMeta = marker;
+                        } else if (existingReport) {
+                            isDone = true;
+                            doneMeta = existingReport;
+                        }
+                    }
+                }
+
+                if (isDone) {
+                    doneCount++;
+                    const realisasiDisplay = task.key === 'cctv_mingguan' ? `${currentItemCount || task.realisasi} Kegiatan (Target 3 Terpenuhi)` : task.realisasi;
+                    completedHtml += `
+                    <div class="completed-card">
+                        <div class="task-top">
+                            <div class="completed-header">
+                                <span class="badge ${task.badgeClass}">${task.badgeText}</span>
+                                <span class="badge-locked">✅ SUDAH TUNTAS &amp; DI-UPLOAD</span>
+                            </div>
+                            <div class="task-title">${task.title}</div>
+                            <div class="task-meta">Target: <b>${task.target}</b> · Realisasi: <b>${realisasiDisplay}</b></div>
+                            
+                            <div class="countdown-pill">
+                                <span>🔒</span>
+                                <span>Terkunci sampai: <b>Senin, ${wr.nextMondayFormatted}</b> (${wr.daysRemaining} hari lagi)</span>
+                            </div>
+                            <div style="font-size:10.5px; color:#27ae60; margin-top:4px;">
+                                Laporan minggu ini telah memenuhi target (≥ 3 kegiatan) dan dinyatakan tuntas. Kartu ini akan otomatis muncul kembali di daftar aktif saat genap seminggu.
+                            </div>
+                        </div>
+                        <div class="task-actions">
+                            <a href="pages/tampildata.html" class="btn-mark-upload" style="color:#2980b9; border-color:#2980b9;">📂 Lihat Dokumen di Riwayat</a>
+                            <button class="btn-unmark" onclick="unmarkTaskUploaded('${task.key}')">🔄 Buka Kembali / Batalkan Tanda Selesai</button>
+                        </div>
+                    </div>`;
+                } else {
+                    activeCount++;
+                    const directUrl = `pages/form.html?kpi=${task.key}`;
+                    
+                    let progressInfo = '';
+                    let actionBtnText = task.btnText;
+                    if (task.key === 'cctv_mingguan') {
+                        if (currentItemCount === 0) {
+                            progressInfo = `
+                            <div style="background:#fff3cd; border:1px solid #ffeeba; border-radius:6px; padding:6px 10px; font-size:11px; color:#856404; margin-bottom:8px;">
+                                ⚠️ <strong>Syarat Tuntas:</strong> Minimal 3 kegiatan/titik lampiran bukti (Saat ini: <b>0/3</b>).
+                            </div>`;
+                        } else {
+                            progressInfo = `
+                            <div style="background:#fff3cd; border:1px solid #ffeeba; border-radius:6px; padding:6px 10px; font-size:11px; color:#856404; margin-bottom:8px;">
+                                ⚠️ <strong>Progres Saat Ini: ${currentItemCount}/3 Kegiatan</strong> (Kurang <b>${3 - currentItemCount}</b> kegiatan lagi agar dikatakan tuntas).
+                            </div>`;
+                            actionBtnText = `📝 Lanjutkan / Tambah Kegiatan (${currentItemCount}/3)`;
+                        }
+                    }
+
+                    const markBtnHtml = task.type === 'mingguan' ? `
+                        <button class="btn-mark-upload" onclick="markTaskUploaded('${task.key}')">
+                            ☑️ Tandai Sudah Di-upload ke Presensi
+                        </button>
+                    ` : '';
+
+                    activeHtml += `
+                    <div class="task-card">
+                        <div class="task-top">
+                            <div class="task-badges">
+                                <span class="badge ${task.badgeClass}">${task.badgeText}</span>
+                                <span class="badge badge-beban">Beban: ${task.beban}</span>
+                                <span class="badge badge-beban" style="color:#27ae60; border-color:#27ae60; font-weight:bold;">Target: ${task.target}</span>
+                            </div>
+                            <div class="task-title">${task.title}</div>
+                            ${progressInfo}
+                            <div class="task-tupoksi-box">${task.desc}</div>
+                        </div>
+                        <div class="task-actions">
+                            <a href="${directUrl}" class="btn-lapor ${task.btnClass}">${actionBtnText}</a>
+                            ${markBtnHtml}
+                        </div>
+                    </div>`;
+                }
+            });
+
+            activeGrid.innerHTML = activeHtml;
+            completedGrid.innerHTML = completedHtml;
+
+            document.getElementById('cnt-active').innerText = activeCount;
+            document.getElementById('cnt-done').innerText = doneCount;
+
+            document.getElementById('no-active-tasks').style.display = activeCount === 0 ? 'block' : 'none';
+            document.getElementById('no-completed-tasks').style.display = doneCount === 0 ? 'block' : 'none';
+        }
+
+        // --- 4. TANDAI SUDAH UPLOAD & BATALKAN TANDAI ---
+        async function markTaskUploaded(taskKey) {
+            const wr = getWeekRange(new Date());
+            let historyRaw = await localforage.getItem('lapdok_history') || [];
+            let history = Array.isArray(historyRaw) ? historyRaw : [];
+
+            // Validasi khusus target 3 (CCTV): Wajib minimal 3 kegiatan!
+            if (taskKey === 'cctv_mingguan') {
+                const rep = history.find(h => h.kpiCategory === taskKey && ((h.weeklyMeta?.rentang?.includes(wr.weekKey)) || (h.date && new Date(h.date) >= wr.monday && new Date(h.date) <= wr.sunday)));
+                const count = Array.isArray(rep?.data) ? rep.data.length : 0;
+                if (count < 3) {
+                    alert(`⚠️ Belum Memenuhi Syarat Tuntas!\n\nTarget indikator CCTV adalah minimal 3 kegiatan / titik lampiran bukti.\nSaat ini baru terdapat ${count} kegiatan.\n\nSilakan lengkapi hingga minimal 3 kegiatan (kurang ${3 - count} kegiatan lagi) agar laporan dinyatakan tuntas.`);
+                    return;
+                }
+            }
+
+            let uploadedKpi = await localforage.getItem('lapdok_uploaded_kpi') || {};
+            uploadedKpi[`${taskKey}_${wr.weekKey}`] = {
+                category: taskKey,
+                weekKey: wr.weekKey,
+                rentang: wr.rentang,
+                mingguKe: wr.mingguKe,
+                uploadedAt: Date.now(),
+                isUploaded: true
+            };
+            await localforage.setItem('lapdok_uploaded_kpi', uploadedKpi);
+            
+            if (typeof Jarvis !== 'undefined' && !Jarvis.isMuted) {
+                Jarvis.say("Laporan mingguan ditandai selesai. Tugas akan disembunyikan sampai hari Senin minggu berikutnya.");
+            }
+            await renderDashboard();
+        }
+
+        async function unmarkTaskUploaded(taskKey) {
+            const wr = getWeekRange(new Date());
+            let uploadedKpi = await localforage.getItem('lapdok_uploaded_kpi') || {};
+            const key = `${taskKey}_${wr.weekKey}`;
+            if (uploadedKpi[key]) {
+                uploadedKpi[key].isUploaded = false;
+                await localforage.setItem('lapdok_uploaded_kpi', uploadedKpi);
+            }
+            await renderDashboard();
+        }
+
+        // --- 5. JARVIS TOGGLE DI BERANDA ---
+        function toggleJarvisHome() {
+            if (typeof Jarvis !== 'undefined') {
+                if (Jarvis.isMuted) {
+                    Jarvis.activate();
+                    Jarvis.say("Pemandu suara Jarvis aktif. Silakan pilih tugas kinerja Anda.");
+                    document.getElementById('btn-jarvis-action').innerText = "🔇 Matikan Suara";
+                    document.getElementById('btn-jarvis-action').style.background = "#e74c3c";
+                } else {
+                    Jarvis.toggleMute();
+                    document.getElementById('btn-jarvis-action').innerText = "🔊 Nyalakan Suara";
+                    document.getElementById('btn-jarvis-action').style.background = "#27ae60";
+                }
+            }
+        }
+
+        // --- 6. INISIALISASI ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            await renderDashboard();
+            if (typeof Jarvis !== 'undefined' && Jarvis.init) {
+                Jarvis.init();
+            }
+        });
+    </script>
+</body>
+</html>

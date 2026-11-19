@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dokumentasi Proyek: LapDok Kinerja</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --code-bg: #0f172a;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.65;
+            padding: 30px 15px;
+        }
+        .doc-wrapper {
+            max-width: 960px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        .doc-header {
+            background: linear-gradient(135deg, #1e293b 0%, #2c3e50 100%);
+            color: white;
+            padding: 36px 32px;
+            border-bottom: 4px solid var(--accent);
+        }
+        .doc-header h1 {
+            font-size: 26px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .doc-header p {
+            color: #94a3b8;
+            font-size: 14.5px;
+            max-width: 780px;
+        }
+        .badge-list {
+            margin-top: 18px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 600;
+        }
+        .doc-content {
+            padding: 35px 32px;
+        }
+        h2 {
+            font-size: 19px;
+            color: var(--primary);
+            margin: 28px 0 14px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        h3 {
+            font-size: 16px;
+            color: #334155;
+            margin: 18px 0 10px 0;
+        }
+        p, li {
+            font-size: 14px;
+            color: #334155;
+            margin-bottom: 10px;
+        }
+        ul, ol {
+            padding-left: 22px;
+            margin-bottom: 15px;
+        }
+        li { margin-bottom: 6px; }
+        .alert {
+            background: #eff6ff;
+            border-left: 4px solid var(--accent);
+            padding: 14px 18px;
+            border-radius: 0 8px 8px 0;
+            margin: 18px 0;
+            font-size: 13.5px;
+        }
+        .alert-success {
+            background: #f0fdf4;
+            border-left-color: var(--success);
+            color: #166534;
+        }
+        .alert-warning {
+            background: #fffbeb;
+            border-left-color: var(--warning);
+            color: #92400e;
+        }
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            margin: 18px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13.5px;
+            text-align: left;
+        }
+        th {
+            background: #f1f5f9;
+            color: #475569;
+            font-weight: 700;
+            padding: 11px 14px;
+            border: 1px solid var(--border);
+        }
+        td {
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            color: #334155;
+        }
+        tr:nth-child(even) { background-color: #f8fafc; }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+        .feature-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 18px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .feature-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+        }
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+        .feature-title {
+            font-size: 14.5px;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 6px;
+        }
+        .feature-desc {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+        .quick-nav {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin-bottom: 25px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            font-size: 13px;
+        }
+        .quick-nav a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .quick-nav a:hover {
+            text-decoration: underline;
+        }
+        .footer-note {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .doc-header { padding: 22px 18px; }
+            .doc-content { padding: 20px 16px; }
+            .doc-header h1 { font-size: 20px; }
+            .feature-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="doc-wrapper">
+    <div class="doc-header">
+        <h1>📋 LapDok Kinerja - Dokumentasi Lengkap</h1>
+        <p>Aplikasi web dokumentasi kinerja teknis terstandar untuk Sub Bidang Teknologi Informasi, Perumda Air Minum Amerta Toraya (Toraja Utara).</p>
+        <div class="badge-list">
+            <span class="badge"><i class="fas fa-check-circle"></i> Versi 2.0 (KPI Presensi)</span>
+            <span class="badge"><i class="fas fa-file-pdf"></i> Format PDF Resmi</span>
+            <span class="badge"><i class="fas fa-map-marker-alt"></i> GPS & Satelit Leaflet</span>
+            <span class="badge"><i class="fas fa-mobile-alt"></i> Mobile Hamburger Ready</span>
+            <span class="badge"><i class="fab fa-blogger"></i> Blogger/Blogspot Ready</span>
+        </div>
+    </div>
+
+    <div class="doc-content">
+
+        <div class="quick-nav">
+            <strong>Lompat ke Bagian:</strong>
+            <a href="#fitur">🌟 Fitur Utama</a>
+            <a href="#kpi">🎯 4 Kategori KPI</a>
+            <a href="#struktur">📂 Struktur Berkas</a>
+            <a href="#peta">🗺️ Peta & Lokasi</a>
+            <a href="#pdf">🖨️ Mesin PDF</a>
+            <a href="#blogger">🌐 Panduan Blogger</a>
+        </div>
+
+        <div class="alert alert-success">
+            <strong>Identitas Lembaga Resmi:</strong><br>
+            <strong>PERUMDA AIR MINUM AMERTA TORAYA</strong> &bull; <strong>SUB BIDANG TEKNOLOGI INFORMASI</strong><br>
+            <em>Alamat: Jl. Tedong Bonga, Kompleks Pasar Bolu, Kel. Tallunglipu Matallo, Kec. Tallunglipu, Kabupaten Toraja Utara, Sulawesi Selatan</em>
+        </div>
+
+        <h2 id="fitur"><i class="fas fa-star" style="color:#f1c40f;"></i> Fitur Unggulan Sistem</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <span class="feature-icon">🎯</span>
+                <div class="feature-title">Sinkronisasi KPI Presensi</div>
+                <div class="feature-desc">Mendukung 4 kategori penugasan aktif dari portal <code>presensi.amertatoraya.com</code> dengan validasi target mingguan otomatis.</div>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">🔒</span>
+                <div class="feature-title">Penguncian Mingguan Otomatis</div>
+                <div class="feature-desc">Laporan mingguan yang telah tuntas diunggah otomatis disembunyikan dari dashboard dan dikunci hingga hari Senin minggu berikutnya.</div>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">🗺️</span>
+                <div class="feature-title">Peta Satelit & Poligon Torut</div>
+                <div class="feature-desc">Pratinjau peta satelit Google Hybrid dengan batas wilayah resmi Toraja Utara. Titik koordinat yang ditandai otomatis mengisi alamat formulir.</div>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">⏱️</span>
+                <div class="feature-title">Otomatisasi Rentang Waktu</div>
+                <div class="feature-desc">Waktu kerja dihitung otomatis berdasarkan timestamp foto SEBELUM hingga foto SELESAI tanpa perlu diketik manual.</div>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">📷</span>
+                <div class="feature-title">3 Foto Terstandar & Watermark</div>
+                <div class="feature-desc">Label foto diseragamkan menjadi <code>SEBELUM</code>, <code>PROSES</code>, dan <code>SELESAI</code> dengan stempel tanggal, jam, dan koordinat GPS.</div>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">📱</span>
+                <div class="feature-title">Navigasi Hamburger Mobile</div>
+                <div class="feature-desc">Menu garis tiga (☰) beranimasi menjadi silang (✕) dengan dropdown lebar penuh yang ramah sentuhan jari pada smartphone.</div>
+            </div>
+        </div>
+
+        <h2 id="kpi"><i class="fas fa-bullseye" style="color:#e74c3c;"></i> 4 Kategori Penugasan KPI Terpasang</h2>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Kategori KPI</th>
+                        <th>Sifat</th>
+                        <th>Target</th>
+                        <th>Kriteria Tuntas & Validasi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Perawatan IT & Edukasi Aplikasi</strong></td>
+                        <td>Harian</td>
+                        <td>100%</td>
+                        <td>Dapat dilaporkan harian sesuai kegiatan pemeliharaan perangkat kantor dan edukasi pengguna.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Penanganan Kendala Jaringan & Administrasi Teknik</strong></td>
+                        <td>Mingguan</td>
+                        <td>100%</td>
+                        <td>Direkap mingguan (Senin s/d Minggu). Laporan dikunci setelah diunggah hingga Senin berikutnya.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Pemantauan & Pemeliharaan CCTV</strong></td>
+                        <td>Mingguan</td>
+                        <td>3 Jumlah</td>
+                        <td><strong>Wajib minimal 3 kegiatan</strong> (Poin 1: Live view, Poin 2: Backup NVR, Poin 3: Fisik kamera) agar tuntas.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tugas Lain-lain Perusahaan</strong></td>
+                        <td>Insidentil</td>
+                        <td>100%</td>
+                        <td>Penugasan mendadak atau kegiatan institusional di luar jadwal rutin.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 id="peta"><i class="fas fa-map-marked-alt" style="color:#27ae60;"></i> Peta Lokasi & Sinkronisasi Alamat</h2>
+        <p>Aplikasi menggunakan library <strong>Leaflet.js</strong> terintegrasi dengan <strong>Google Hybrid Satellite Tiles</strong> dan <strong>OpenStreetMap Nominatim Reverse Geocoder</strong>:</p>
+        <ul>
+            <li><strong>Tombol Pintasan:</strong> Terdapat tombol <code>📍 Buka Peta</code> tepat di samping input formulir <strong>LOKASI / OBJEK</strong>.</li>
+            <li><strong>Reverse Geocoding:</strong> Ketika pin penanda digeser atau diklik di peta, alamat jalan, kelurahan, dan kecamatan diterjemahkan otomatis ke dalam input teks.</li>
+            <li><strong>Watermark Kamera:</strong> Teks alamat hasil peta otomatis disematkan pada stempel foto kamera di lapangan.</li>
+        </ul>
+
+        <h2 id="pdf"><i class="fas fa-print" style="color:#8e44ad;"></i> Format Output Cetak PDF Resmi</h2>
+        <p>Hasil cetak dokumen PDF dirancang presisi sesuai format baku laporan kinerja teknik:</p>
+        <ul>
+            <li><strong>Halaman 1 (Rekapitulasi Kinerja Mingguan):</strong> Kop resmi Perumda Air Minum Amerta Toraya, tabel matriks penugasan (Hari/Tanggal, Kegiatan, Realisasi, Waktu, Lokasi Objek, Status Hasil, dan Catatan Evaluasi Mingguan).</li>
+            <li><strong>Halaman 2 s/d Selesai (Lampiran Teknis):</strong> Berisi tepat 3 foto bertingkat (SEBELUM, PROSES, SELESAI), kotak pratinjau peta satelit 1:1, tautan koordinat Google Maps, nama petugas, dan deskripsi teknis.</li>
+        </ul>
+
+        <h2 id="struktur"><i class="fas fa-folder-open" style="color:#e67e22;"></i> Struktur Direktori Proyek</h2>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Path / Berkas</th>
+                        <th>Deskripsi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>dokumentasikinerja/index.html</code></td>
+                        <td>Dashboard penugasan KPI, ringkasan profil, hitung mundur, dan status tuntas.</td>
+                    </tr>
+                    <tr>
+                        <td><code>dokumentasikinerja/pages/form.html</code></td>
+                        <td>Formulir input kegiatan, kamera watermark, modal peta Leaflet, dan auto-save draft.</td>
+                    </tr>
+                    <tr>
+                        <td><code>dokumentasikinerja/pages/tampildata.html</code></td>
+                        <td>Halaman riwayat laporan, filter, hapus, salin teks presensi, dan konversi PDF.</td>
+                    </tr>
+                    <tr>
+                        <td><code>dokumentasikinerja/js/form-handler.js</code></td>
+                        <td>Logika formulir, GPS map marker, reverse geocoding, kamera, dan IndexedDB draft.</td>
+                    </tr>
+                    <tr>
+                        <td><code>dokumentasikinerja/js/pdf-engine.js</code></td>
+                        <td>Mesin penyusun tata letak PDF resmi (Rekapitulasi + Lampiran Teknis 1:1 peta satelit).</td>
+                    </tr>
+                    <tr>
+                        <td><code>dokumentasikinerja/js/nav.js</code></td>
+                        <td>Pengendali menu hamburger navigasi mobile dan fitur click-outside auto-close.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 id="blogger"><i class="fab fa-blogger" style="color:#e67e22;"></i> Dukungan Penuh Blogger / Blogspot</h2>
+        <div class="alert alert-warning">
+            Versi Blogger telah disiapkan di folder <strong><code>dokumentasikinerja-blogger/</code></strong> dalam bentuk <strong>Single Page Application (SPA)</strong>.
+        </div>
+        <p>Anda dapat menerapkan aplikasi ini di blogspot gratis dalam waktu 2 menit:</p>
+        <ol>
+            <li>Buka <strong>Blogger.com</strong> &gt; Pilih Blog &gt; Masuk ke menu <strong>Tema (Theme)</strong>.</li>
+            <li>Klik tanda panah <strong>(▼)</strong> di samping *Sesuaikan* &gt; Pilih <strong>Pulihkan (Restore)</strong>.</li>
+            <li>Unggah berkas <strong><code>tema-blogger-lapdok.xml</code></strong>.</li>
+            <li>Pada *Setelan Seluler*, pilih opsi <strong>Desktop</strong> lalu Simpan.</li>
+        </ol>
+
+        <div class="footer-note">
+            &copy; 2026 Perumda Air Minum Amerta Toraya &bull; Sub Bidang Teknologi Informasi
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
