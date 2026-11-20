@@ -204,29 +204,6 @@ body {
     line-height: 1.5;
 }
 
-/* CCTV Checklist Box */
-.cctv-checklist-box {
-    background: #fcf3cf;
-    border: 1px solid #f9e79f;
-    border-radius: 6px;
-    padding: 10px;
-    margin-top: 10px;
-}
-.cctv-check-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    margin-bottom: 6px;
-    font-size: 11px;
-    color: #7d6608;
-}
-.cctv-check-item:last-child { margin-bottom: 0; }
-.cctv-check-item input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    margin-top: 2px;
-}
-
 /* Quick Fill Suggestions */
 .quick-fill-box {
     margin-top: 8px;
@@ -535,9 +512,7 @@ body {
 }
 
 .item-officer-grid {
-    display: grid;
-    grid-template-columns: 1fr 120px;
-    gap: 10px;
+    display: block;
     margin-top: 10px;
 }
 
@@ -553,10 +528,6 @@ body {
     .container { padding: 10px 8px; }
     .item-submeta-grid {
         grid-template-columns: 1fr;
-        gap: 8px;
-    }
-    .item-officer-grid {
-        grid-template-columns: 1fr 100px;
         gap: 8px;
     }
     .kpi-selector-card {
@@ -599,11 +570,5 @@ body {
     .btn-save, .btn-add {
         padding: 13px;
         font-size: 13px;
-    }
-}
-
-@media (max-width: 380px) {
-    .item-officer-grid {
-        grid-template-columns: 1fr;
     }
 }

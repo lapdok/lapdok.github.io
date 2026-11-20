@@ -75,7 +75,7 @@ const KPI_CATEGORIES = {
         field1Placeholder: 'Contoh: NVR Hikvision 16 Channel, Kamera IP IPA Buntu Pepasan...',
         field2Label: 'TITIK AREA / LOKASI PANTAUAN:',
         field2Placeholder: 'Contoh: Halaman Depan, Ruang Kasir, IPA Bolu, Pintu Masuk...',
-        helpText: '💡 <strong>Indikator Mingguan (CCTV)</strong>: Mencakup 3 lingkup tupoksi CCTV (Monitoring, Backup, Maintenance). Di form presensi, isi <strong>Realisasi: 3</strong>.'
+        helpText: '💡 <strong>Indikator Mingguan (CCTV)</strong>: Laporkan kegiatan CCTV dalam satu minggu (bisa ditambah dengan tombol "+ Tambah Kegiatan Lain"). Jika sudah ada <strong>3 atau lebih laporan kegiatan</strong>, maka laporan dinyatakan <strong>TUNTAS</strong>. Di form presensi, isi <strong>Realisasi: 3</strong>.'
     },
     'insidentil_perusahaan': {
         key: 'insidentil_perusahaan',
@@ -411,14 +411,10 @@ function addNewJobItem() {
                     <input type="date" class="date-input" id="date-in-${itemCount}" value="${today}" onchange="handleDateChange(${itemCount})">
                     <div id="date-lbl-${itemCount}" style="margin-top:5px; color:#27ae60; font-weight:bold;">${formatIndoDate(today)}</div>
                     
-                    <div class="item-officer-grid">
+                    <div class="item-officer-grid" style="margin-top:10px;">
                         <div>
                             <label style="font-size:10px; font-weight:bold; color:#666;">NAMA PETUGAS / PELAPOR:</label>
                             <input type="text" class="officer-input" id="officer-in-${itemCount}" value="DAVID PALIWAN, S.Kom" oninput="saveDraft()" placeholder="Nama petugas..." style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:11px; font-weight:bold; color:#2c3e50;">
-                        </div>
-                        <div>
-                            <label style="font-size:10px; font-weight:bold; color:#27ae60;">REALISASI (*):</label>
-                            <input type="number" id="realisasi-in-${itemCount}" value="${cfg.defaultRealisasi}" oninput="saveDraft()" style="width:100%; padding:8px; border:2px solid #27ae60; border-radius:4px; font-size:12px; font-weight:bold; color:#27ae60; text-align:center;">
                         </div>
                     </div>
 
@@ -447,24 +443,6 @@ function addNewJobItem() {
                 <input type="text" class="gps-res" id="gps-res-${itemCount}" readonly placeholder="Koordinat GPS...">
                 <div class="address-output" id="addr-res-${itemCount}">Alamat otomatis dari peta...</div>
             </div>
-
-            ${currentKpiCategory === 'cctv_mingguan' ? `
-            <div class="cctv-checklist-box" style="margin: 12px;">
-                <div style="font-weight:bold; font-size:11px; color:#b7950b; margin-bottom:6px;">📋 CHECKLIST 3 POIN TUPOKSI CCTV MINGGUAN:</div>
-                <label class="cctv-check-item">
-                    <input type="checkbox" id="cctv-pt1-${itemCount}" checked onchange="saveDraft()">
-                    <span><strong>Poin 1</strong>: Pemantauan Live View CCTV (Kantor Pusat, Gudang, IPA, Loket)</span>
-                </label>
-                <label class="cctv-check-item">
-                    <input type="checkbox" id="cctv-pt2-${itemCount}" checked onchange="saveDraft()">
-                    <span><strong>Poin 2</strong>: Pencadangan / Pengarsipan Rekaman Insiden Penting (Storage/NVR)</span>
-                </label>
-                <label class="cctv-check-item">
-                    <input type="checkbox" id="cctv-pt3-${itemCount}" checked onchange="saveDraft()">
-                    <span><strong>Poin 3</strong>: Pemeliharaan Fisik Kamera, Kebersihan Lensa & Koneksi Jaringan</span>
-                </label>
-            </div>
-            ` : ''}
 
             <div class="grid-header">
                 <div>${cfg.photoLabels[0]}</div>
@@ -914,10 +892,7 @@ async function saveDraft() {
             p3: document.getElementById(`p3-${id}`)?.querySelector('img')?.src || null,
             desc: document.getElementById(`ta-${id}`)?.value || "",
             alat: document.getElementById(`alat-${id}`)?.value || "",
-            bahan: document.getElementById(`bahan-${id}`)?.value || "",
-            cctvPt1: document.getElementById(`cctv-pt1-${id}`) ? document.getElementById(`cctv-pt1-${id}`).checked : true,
-            cctvPt2: document.getElementById(`cctv-pt2-${id}`) ? document.getElementById(`cctv-pt2-${id}`).checked : true,
-            cctvPt3: document.getElementById(`cctv-pt3-${id}`) ? document.getElementById(`cctv-pt3-${id}`).checked : true
+            bahan: document.getElementById(`bahan-${id}`)?.value || ""
         });
     });
     await localforage.setItem('lapdok_draft', items);
@@ -1018,9 +993,6 @@ async function loadDraft() {
         if (data.p1 && document.getElementById(`p1-${id}`)) document.getElementById(`p1-${id}`).innerHTML = `<img src="${data.p1}">`;
         if (data.p2 && document.getElementById(`p2-${id}`)) document.getElementById(`p2-${id}`).innerHTML = `<img src="${data.p2}">`;
         if (data.p3 && document.getElementById(`p3-${id}`)) document.getElementById(`p3-${id}`).innerHTML = `<img src="${data.p3}">`;
-        if (document.getElementById(`cctv-pt1-${id}`)) document.getElementById(`cctv-pt1-${id}`).checked = data.cctvPt1 !== false;
-        if (document.getElementById(`cctv-pt2-${id}`)) document.getElementById(`cctv-pt2-${id}`).checked = data.cctvPt2 !== false;
-        if (document.getElementById(`cctv-pt3-${id}`)) document.getElementById(`cctv-pt3-${id}`).checked = data.cctvPt3 !== false;
     });
 }
 
